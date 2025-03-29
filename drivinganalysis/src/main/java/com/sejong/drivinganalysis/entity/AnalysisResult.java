@@ -38,8 +38,11 @@ public class AnalysisResult extends BaseTimeEntity {
     @Column(name = "driving_score")
     private Integer drivingScore;
 
-    @Column(name = "analyzed_at", nullable = false)
-    private LocalDateTime analyzedAt;
+    @Column(name = "completed_at", nullable = false)
+    private LocalDateTime completedAt;
+
+    @Column(name = "processing_time")
+    private Long processingTime;
 
     @Column(name = "total_duration")
     private Integer totalDuration;
@@ -59,7 +62,7 @@ public class AnalysisResult extends BaseTimeEntity {
         result.phoneUsageCount = phoneUsageCount;
         result.smokingCount = smokingCount;
         result.totalDuration = totalDuration;
-        result.analyzedAt = LocalDateTime.now();
+        result.completedAt = LocalDateTime.now();
         result.status = AnalysisStatus.COMPLETED;
         result.calculateScore();
         return result;
@@ -69,8 +72,22 @@ public class AnalysisResult extends BaseTimeEntity {
     public void calculateScore() {
         int score = 100; // 기본 점수
 
-        // 계산 로직
+        // 졸음 감지 횟수에 따른 감점 (1회당 10점)
+        if (drowsinessCount != null) {
+            score -= drowsinessCount * 10;
+        }
 
-        this.drivingScore = Math.max(0, score); // 최소 0점
+        // 휴대폰 사용 횟수에 따른 감점 (1회당 8점)
+        if (phoneUsageCount != null) {
+            score -= phoneUsageCount * 8;
+        }
+
+        // 흡연 횟수에 따른 감점 (1회당 5점)
+        if (smokingCount != null) {
+            score -= smokingCount * 5;
+        }
+
+        // 최소 점수는 0점으로 설정
+        this.drivingScore = Math.max(0, score);
     }
 }

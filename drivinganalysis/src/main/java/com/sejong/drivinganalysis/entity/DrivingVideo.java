@@ -27,6 +27,9 @@ public class DrivingVideo extends BaseTimeEntity {
 
     private Integer duration;
 
+    @Column(name = "recording_date")
+    private LocalDateTime recordingDate;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private VideoStatus status;
@@ -43,14 +46,28 @@ public class DrivingVideo extends BaseTimeEntity {
         user.getVideos().add(this);
     }
 
-    // 생성 메서드
-    public static DrivingVideo createVideo(User user, String filePath, Integer duration) {
+    // 생성 메서드 (수정: DrivingSession 파라미터 추가)
+    public static DrivingVideo createVideo(User user, String filePath,
+                                           Integer duration) {
         DrivingVideo video = new DrivingVideo();
-        video.setUser(user); // 연관관계 메서드 사용
+        video.setUser(user);
         video.filePath = filePath;
         video.duration = duration;
+        video.recordingDate = LocalDateTime.now();
         video.status = VideoStatus.UPLOADED;
         video.uploadedAt = LocalDateTime.now();
+
         return video;
+    }
+    // DrivingVideo 클래스에 추가
+    public void updateStatus(VideoStatus status) {
+        this.status = status;
+        if (status == VideoStatus.ANALYZED) {
+            this.processedAt = LocalDateTime.now();
+        }
+    }
+
+    public void setProcessedAt(LocalDateTime processedAt) {
+        this.processedAt = processedAt;
     }
 }
