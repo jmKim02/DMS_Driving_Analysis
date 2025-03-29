@@ -1,7 +1,7 @@
 #application.yml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/driving_analysis?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/driving_analysis?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -13,7 +13,7 @@ spring:
       hibernate:
       #  show_sql: true
         format_sql: true
-        dialect: org.hibernate.dialect.MySQL8Dialect
+      # dialect: org.hibernate.dialect.MySQLDialect
   servlet:
     multipart:
       max-file-size: 50MB
