@@ -42,7 +42,7 @@ public class AnalysisResult extends BaseTimeEntity {
     private LocalDateTime analyzedAt;
 
     @Column(name = "total_duration")
-    private Integer totalDuration;
+    private Integer totalDuration; //이거 integer로 해도되는건가
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

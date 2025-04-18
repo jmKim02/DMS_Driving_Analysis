@@ -27,6 +27,7 @@ public class Challenge extends BaseTimeEntity {
     @Column(name = "target_value", nullable = false)
     private Long targetValue;
 
+
     @Enumerated(EnumType.STRING)
     @Column(name = "challenge_type", nullable = false)
     private ChallengeType challengeType;
