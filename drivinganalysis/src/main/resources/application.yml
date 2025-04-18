@@ -11,13 +11,16 @@ spring:
       ddl-auto: create  # 테스트용
     properties:
       hibernate:
-      #  show_sql: true
         format_sql: true
-      # dialect: org.hibernate.dialect.MySQLDialect
+        dialect: org.hibernate.dialect.MySQLDialect
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+
+  websocket:
+    max-text-message-size: 50MB
+    max-binary-message-size: 50MB
 
 jwt:
   secret: yourSecretKeyHereShouldBeLongEnoughToBeSecure
@@ -26,4 +29,14 @@ jwt:
 logging:
   level:
     org.hibernate.SQL: DEBUG
-#    org.hibernate.type: TRACE
+    org.springframework.web.socket: DEBUG
+    org.springframework.messaging: DEBUG
+
+# AI 서버 연결 설정
+ai:
+  server:
+    host: localhost
+    port: 5000
+    timeout: 30  # 요청 타임아웃(초)
+    retry:
+      max: 2     # 최대 재시도 횟수

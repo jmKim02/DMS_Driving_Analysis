@@ -22,7 +22,7 @@ public class DrivingVideo extends BaseTimeEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "file_path", nullable = false)
+    @Column(name = "file_path")
     private String filePath;
 
     private Integer duration;
@@ -52,5 +52,13 @@ public class DrivingVideo extends BaseTimeEntity {
         video.status = VideoStatus.UPLOADED;
         video.uploadedAt = LocalDateTime.now();
         return video;
+    }
+
+    public void setStatus(VideoStatus videoStatus) {
+        this.status = videoStatus;
+    }
+
+    public void setProcessedAt() {
+        this.processedAt = LocalDateTime.now();
     }
 }
