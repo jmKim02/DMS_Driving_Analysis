@@ -1,7 +1,7 @@
 package com.sejong.drivinganalysis.repository;
 
 import com.sejong.drivinganalysis.entity.UserScore;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repositor
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -21,4 +21,6 @@ public interface UserScoreRepository extends JpaRepository<UserScore, Long> {
     Optional<UserScore> findFirstByUserUserIdAndScoreDateLessThanEqualOrderByScoreDateDesc(Long userId, LocalDate date);
 
     List<UserScore> findByUserUserIdAndScoreDateBetweenOrderByScoreDateAsc(Long userId, LocalDate startDate, LocalDate endDate);
+  
+    List<UserScore> findByScoreDateBetween(LocalDate startDate, LocalDate endDate);
 }
