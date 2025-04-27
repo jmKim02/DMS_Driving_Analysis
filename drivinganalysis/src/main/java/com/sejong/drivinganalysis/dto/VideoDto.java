@@ -22,9 +22,18 @@ public class VideoDto {
     @AllArgsConstructor
     public static class FrameBatchRequest {
         private Long userId;
-        private Integer frameIndex;
+        private Integer batchId;
         private Long timestamp;
-        private List<byte[]> frames;
+        private List<FrameData> frames;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FrameData {
+        private byte[] data;
+        private Integer frameId;  // 개별 프레임 ID 포함
     }
 
     /**
@@ -37,7 +46,7 @@ public class VideoDto {
     @AllArgsConstructor
     public static class FrameProcessedResponse {
         private Long userId;
-        private Integer frameIndex;
+        private Integer batchId;
         private Long timestamp;
         private Boolean processed;
     }

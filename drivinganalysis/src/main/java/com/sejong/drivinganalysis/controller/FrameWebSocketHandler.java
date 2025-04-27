@@ -112,12 +112,16 @@ public class FrameWebSocketHandler {
             List<Map<String, Object>> frameInfos = (List<Map<String, Object>>) metadata.get("frames");
 
             // 4. 프레임 데이터 추출
-            List<byte[]> frames = new ArrayList<>();
+            List<VideoDto.FrameData> frames = new ArrayList<>();
             for (Map<String, Object> frameInfo : frameInfos) {
                 Integer frameLength = (Integer) frameInfo.get("length");
+                Integer frameId = (Integer) frameInfo.get("frameId");
                 byte[] frameData = new byte[frameLength];
                 buffer.get(frameData);
-                frames.add(frameData);
+                frames.add(VideoDto.FrameData.builder()
+                        .data(frameData)
+                        .frameId(frameId)
+                        .build());
             }
 
             log.info("프레임 배치 수신 완료: userId={}, batchId={}, frames={}",
@@ -126,7 +130,7 @@ public class FrameWebSocketHandler {
             // 5. 프레임 처리 요청
             VideoDto.FrameBatchRequest request = VideoDto.FrameBatchRequest.builder()
                     .userId(userId)
-                    .frameIndex(batchId)
+                    .batchId(batchId)
                     .timestamp(timestamp)
                     .frames(frames)
                     .build();

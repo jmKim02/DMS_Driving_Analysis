@@ -1,6 +1,7 @@
 package com.sejong.drivinganalysis.service;
 
 import com.google.protobuf.ByteString;
+import com.sejong.drivinganalysis.dto.VideoDto;
 import com.sejong.drivinganalysis.grpc.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -48,6 +49,7 @@ public class GrpcClientService {
                 .usePlaintext()
                 .keepAliveTime(30, TimeUnit.SECONDS) // 연결 유지 설정
                 .keepAliveTimeout(10, TimeUnit.SECONDS)
+                .keepAliveWithoutCalls(true) // 추가
                 .build();
         blockingStub = VideoAnalysisServiceGrpc.newBlockingStub(channel);
         log.info("gRPC client initialized, connected to AI server at {}:{}", aiServerHost, aiServerPort);
@@ -57,16 +59,23 @@ public class GrpcClientService {
      * 프레임 배치를 AI 서버로 전송하여 실시간 분석 요청
      * 주로 졸음 감지 여부만 확인하는 간소화된 응답 반환
      */
-    public RealtimeAnalysisResponse analyzeFrames(Long userId, Integer frameIndex, Long timestamp, List<byte[]> frames) {
-        log.info("Sending gRPC request to AI server for userId: {}, frameIndex: {}, frames: {}",
-                userId, frameIndex, frames.size());
+    public RealtimeAnalysisResponse analyzeFrames(Long userId, Integer batchId, Long timestamp, List<VideoDto.FrameData> frames) {
+        log.info("Sending gRPC request to AI server for userId: {}, batchId: {}, frames: {}",
+                userId, batchId, frames.size());
 
         // 프로토 형식에 맞게 요청 구성
+        List<Frame> protoFrames = frames.stream()
+                .map(f -> Frame.newBuilder()
+                        .setData(ByteString.copyFrom(f.getData()))
+                        .setFrameId(f.getFrameId())
+                        .build())
+                .collect(Collectors.toList());
+
         FrameBatch request = FrameBatch.newBuilder()
                 .setUserId(userId)
-                .setFrameIndex(frameIndex)
+                .setBatchId(batchId)
                 .setTimestamp(timestamp)
-                .addAllFrames(frames.stream().map(ByteString::copyFrom).collect(Collectors.toList()))
+                .addAllFrames(protoFrames)
                 .build();
 
         int retries = 0;

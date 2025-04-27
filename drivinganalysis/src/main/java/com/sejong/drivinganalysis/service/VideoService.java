@@ -35,6 +35,7 @@ public class VideoService {
     private final AnalysisResultRepository analysisResultRepository;
     private final GrpcClientService grpcClientService;
     private final AlertService alertService;
+    private final UserScoreService userScoreService;
 
     // 세션별 시작 타임스탬프와 마지막 프레임 타임스탬프 관리
     private final Map<Long, Long> userSessionStartTimes = new ConcurrentHashMap<>();
@@ -50,11 +51,11 @@ public class VideoService {
             User user = userRepository.findById(frameBatch.getUserId())
                     .orElseThrow(() -> new ApiException("USER_NOT_FOUND", "User not found: " + frameBatch.getUserId()));
 
-            log.info("Processing frame batch for user: {}, frameIndex: {}, frames count: {}",
-                    user.getUsername(), frameBatch.getFrameIndex(), frameBatch.getFrames().size());
+            log.info("Processing frame batch for user: {}, batchId: {}, frames count: {}",
+                    user.getUsername(), frameBatch.getBatchId(), frameBatch.getFrames().size());
 
             // 세션 시작 시간 기록 (첫 프레임인 경우)
-            if (frameBatch.getFrameIndex() == 0 || !userSessionStartTimes.containsKey(user.getUserId())) {
+            if (frameBatch.getBatchId() == 0 || !userSessionStartTimes.containsKey(user.getUserId())) {
                 userSessionStartTimes.put(user.getUserId(), frameBatch.getTimestamp());
                 log.info("New driving session started for userId: {}", user.getUserId());
             }
@@ -67,7 +68,7 @@ public class VideoService {
                 try {
                     RealtimeAnalysisResponse response = grpcClientService.analyzeFrames(
                             user.getUserId(),
-                            frameBatch.getFrameIndex(),
+                            frameBatch.getBatchId(),
                             frameBatch.getTimestamp(),
                             frameBatch.getFrames()
                     );
@@ -95,7 +96,7 @@ public class VideoService {
             // 응답 반환
             return VideoDto.FrameProcessedResponse.builder()
                     .userId(frameBatch.getUserId())
-                    .frameIndex(frameBatch.getFrameIndex())
+                    .batchId(frameBatch.getBatchId())
                     .timestamp(frameBatch.getTimestamp())
                     .processed(true)
                     .build();
@@ -165,6 +166,10 @@ public class VideoService {
             analysisResultRepository.save(result);
 
             log.info("Saved analysis result: {}", result.getResultId());
+
+            // 운전 점수 업데이트 추가
+            userScoreService.updateUserScore(user.getUserId(), result);
+            log.info("Updated user score for userId: {}", user.getUserId());
 
             // 응답 반환
             return VideoDto.DrivingSessionEndResponse.builder()
