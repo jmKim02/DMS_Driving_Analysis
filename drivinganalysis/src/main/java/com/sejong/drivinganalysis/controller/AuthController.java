@@ -1,8 +1,8 @@
 package com.sejong.drivinganalysis.controller;
 
 import com.sejong.drivinganalysis.dto.AuthDto;
-import com.sejong.drivinganalysis.dto.common.ApiResponse;
 import com.sejong.drivinganalysis.service.AuthService;
+import com.sejong.drivinganalysis.dto.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

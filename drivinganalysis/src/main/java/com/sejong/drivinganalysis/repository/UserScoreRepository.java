@@ -1,7 +1,7 @@
 package com.sejong.drivinganalysis.repository;
 
 import com.sejong.drivinganalysis.entity.UserScore;
-import org.springframework.data.jpa.repositor
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;

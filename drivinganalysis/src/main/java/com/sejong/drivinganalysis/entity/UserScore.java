@@ -21,7 +21,7 @@ public class UserScore extends BaseTimeEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    /*@Column(name = "daily_score")
+    @Column(name = "daily_score")
     private Integer dailyScore;
 
     @Column(name = "weekly_score")
@@ -29,8 +29,8 @@ public class UserScore extends BaseTimeEntity {
 
     @Column(name = "monthly_score")
     private Integer monthlyScore;
-*/
-    @Column(name = "score", nullable = false)
+
+    @Column(name = "score")
     private Integer score;
 
     @Column(name = "score_date", nullable = false)
@@ -41,6 +41,19 @@ public class UserScore extends BaseTimeEntity {
         UserScore userScore = new UserScore();
         userScore.user = user;
         userScore.score = score;
+        userScore.scoreDate = scoreDate;
+        return userScore;
+    }
+
+    // 생성 메서드
+    public static UserScore createUserScore(User user, Integer dailyScore,
+                                            Integer weeklyScore, Integer monthlyScore,
+                                            LocalDate scoreDate) {
+        UserScore userScore = new UserScore();
+        userScore.user = user;
+        userScore.dailyScore = dailyScore;
+        userScore.weeklyScore = weeklyScore;
+        userScore.monthlyScore = monthlyScore;
         userScore.scoreDate = scoreDate;
         return userScore;
     }
