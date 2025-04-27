@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.sejong.drivinganalysis.grpc";
+option java_outer_classname = "VideoAnalysisProto";
+
+package videoanalysis;
+
+service VideoAnalysisService {
+  // 프레임 배치 분석 요청
+  rpc AnalyzeFrames (FrameBatch) returns (RealtimeAnalysisResponse) {}
+
+  // 주행 세션 종료 및 최종 분석 요청
+  rpc EndDrivingSession (DrivingSessionEnd) returns (FinalAnalysisResponse) {}
+}
+
+// 프레임 배치 정보
+message FrameBatch {
+  int64 user_id = 1;
+  int32 batch_id = 2;
+  int64 timestamp = 3;
+  repeated Frame frames = 4;
+}
+
+message Frame {
+  bytes data = 1;
+  int32 frame_id = 2;
+}
+
+// 주행 세션 종료 요청
+message DrivingSessionEnd {
+  int64 user_id = 1;
+  int64 session_id = 2;
+  int64 start_timestamp = 3;
+  int64 end_timestamp = 4;
+}
+
+// 실시간 분석 응답 (간소화된 버전)
+message RealtimeAnalysisResponse {
+  int64 user_id = 1;
+  bool drowsiness_detected = 2;
+  bool analysis_completed = 3;
+  string error_message = 4;
+}
+
+// 최종 분석 응답 (세션 종료 시)
+message FinalAnalysisResponse {
+  int64 user_id = 1;
+  int32 drowsiness_count = 2;
+  int32 phone_usage_count = 3;
+  int32 smoking_count = 4;
+  bool analysis_completed = 5;
+  string error_message = 6;
+}

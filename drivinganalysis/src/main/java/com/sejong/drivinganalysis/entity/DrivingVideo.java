@@ -5,13 +5,14 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "driving_videos")
-@Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter @Setter
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
 public class DrivingVideo extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,7 +23,7 @@ public class DrivingVideo extends BaseTimeEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "file_path", nullable = false)
+    @Column(name = "file_path")
     private String filePath;
 
     private Integer duration;
@@ -52,5 +53,13 @@ public class DrivingVideo extends BaseTimeEntity {
         video.status = VideoStatus.UPLOADED;
         video.uploadedAt = LocalDateTime.now();
         return video;
+    }
+
+    public void setStatus(VideoStatus videoStatus) {
+        this.status = videoStatus;
+    }
+
+    public void setProcessedAt() {
+        this.processedAt = LocalDateTime.now();
     }
 }

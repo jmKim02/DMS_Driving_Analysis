@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_scores")
@@ -44,6 +43,19 @@ public class UserScore extends BaseTimeEntity {
         userScore.score = score;
         userScore.scoreDate = scoreDate;
         return userScore;
+    }
+  
+    // Setter 메서드
+    public void setDailyScore(Integer dailyScore) {
+        this.dailyScore = dailyScore;
+    }
+
+    public void setWeeklyScore(Integer weeklyScore) {
+        this.weeklyScore = weeklyScore;
+    }
+
+    public void setMonthlyScore(Integer monthlyScore) {
+        this.monthlyScore = monthlyScore;
     }
 }
 
