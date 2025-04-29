@@ -3,6 +3,7 @@ package com.sejong.drivinganalysis.service;
 import com.sejong.drivinganalysis.dto.VideoDto;
 import com.sejong.drivinganalysis.entity.AnalysisResult;
 import com.sejong.drivinganalysis.entity.DrivingVideo;
+import com.sejong.drivinganalysis.entity.Feedback;
 import com.sejong.drivinganalysis.entity.User;
 import com.sejong.drivinganalysis.entity.enums.VideoStatus;
 import com.sejong.drivinganalysis.exception.ApiException;
@@ -36,6 +37,7 @@ public class VideoService {
     private final GrpcClientService grpcClientService;
     private final AlertService alertService;
     private final UserScoreService userScoreService;
+    private final FeedbackService feedbackService;
 
     // 세션별 시작 타임스탬프와 마지막 프레임 타임스탬프 관리
     private final Map<Long, Long> userSessionStartTimes = new ConcurrentHashMap<>();
@@ -170,6 +172,10 @@ public class VideoService {
             // 운전 점수 업데이트 추가
             userScoreService.updateUserScore(user.getUserId(), result);
             log.info("Updated user score for userId: {}", user.getUserId());
+
+            // 피드백 생성 (추가된 부분)
+            Feedback feedback = feedbackService.generateDrivingFeedback(result);
+            log.info("Generated driving feedback: {}", feedback.getFeedbackId());
 
             // 응답 반환
             return VideoDto.DrivingSessionEndResponse.builder()
