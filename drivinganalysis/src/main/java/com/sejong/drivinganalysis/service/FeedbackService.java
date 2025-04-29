@@ -46,14 +46,11 @@ public class FeedbackService {
         User user = analysisResult.getUser();
         int score = analysisResult.getDrivingScore();
 
-        // 피드백 유형과 심각도 결정
         FeedbackType feedbackType = determineMainFeedbackType(analysisResult);
         SeverityLevel severityLevel = determineSeverityLevel(score);
 
-        // 피드백 내용 생성
         String content = generateFeedbackContent(analysisResult, feedbackType, severityLevel);
 
-        // 피드백 저장
         Feedback feedback = Feedback.createFeedback(user, feedbackType, content, severityLevel);
         return feedbackRepository.save(feedback);
     }
@@ -108,7 +105,6 @@ public class FeedbackService {
                     continue;
                 }
 
-                // 피드백 생성 로직
                 Feedback feedback = generateWeeklyFeedbackForUser(user, userResults, previousMonday, previousSunday);
                 if (feedback != null) {
                     generatedFeedbacks.add(feedback);
@@ -144,7 +140,6 @@ public class FeedbackService {
         // 요일/시간대 패턴 분석
         String timePattern = analyzeTimePattern(weekResults, mostFrequentRisk.getKey());
 
-        // 피드백 생성
         String content = generateWeeklyFeedbackContent(
                 mostFrequentRisk.getKey(),
                 mostFrequentRisk.getValue(),
@@ -287,7 +282,6 @@ public class FeedbackService {
             count = mostFrequentRisk.getValue();
         }
 
-        // 위험 행동 맵 변환 (enum -> String)
         Map<String, Integer> riskBehaviorCountsString = new HashMap<>();
         riskBehaviorCounts.forEach((key, value) ->
                 riskBehaviorCountsString.put(getFeedbackTypeName(key), value));
@@ -425,7 +419,6 @@ public class FeedbackService {
             return new EnumMap<>(FeedbackType.class); // 빈 맵 반환
         }
 
-        // EnumMap 사용으로 성능 개선 및 타입 안전성 확보
         EnumMap<FeedbackType, Integer> riskCounts = new EnumMap<>(FeedbackType.class);
         riskCounts.put(FeedbackType.DROWSINESS, 0);
         riskCounts.put(FeedbackType.PHONE_USAGE, 0);
@@ -435,7 +428,6 @@ public class FeedbackService {
 
             if (result == null) continue;
 
-            // 함수형 업데이트로 가독성 향상
             riskCounts.computeIfPresent(FeedbackType.DROWSINESS,
                     (key, value) -> value + getCountSafely(result.getDrowsinessCount()));
             riskCounts.computeIfPresent(FeedbackType.PHONE_USAGE,
@@ -450,7 +442,6 @@ public class FeedbackService {
         return riskCounts;
     }
 
-    // null 안전한 카운트 추출 헬퍼 메서드 추가
     private int getCountSafely(Integer count) {
         return count != null ? count : 0;
     }

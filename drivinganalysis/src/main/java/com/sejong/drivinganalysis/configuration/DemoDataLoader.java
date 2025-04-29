@@ -6,7 +6,6 @@ import com.sejong.drivinganalysis.entity.enums.VideoStatus;
 import com.sejong.drivinganalysis.repository.AnalysisResultRepository;
 import com.sejong.drivinganalysis.repository.DrivingVideoRepository;
 import com.sejong.drivinganalysis.repository.UserRepository;
-import com.sejong.drivinganalysis.repository.UserScoreRepository;
 import com.sejong.drivinganalysis.service.UserScoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +33,7 @@ public class DemoDataLoader implements CommandLineRunner {
     private final UserScoreService userScoreService;
 
     @Override
-    @Transactional // 트랜잭션 추가
+    @Transactional
     public void run(String... args) {
         // 기존 데모 사용자가 있는지 확인
         if (userRepository.count() == 0) {
@@ -50,7 +49,6 @@ public class DemoDataLoader implements CommandLineRunner {
     private void createDemoUsers() {
         log.info("Creating demo users for testing");
 
-        // 데모 계정 생성
         createUser("driver1", "password1", "driver1@example.com");
         createUser("driver2", "password2", "driver2@example.com");
         createUser("driver3", "password3", "driver3@example.com");
@@ -63,7 +61,6 @@ public class DemoDataLoader implements CommandLineRunner {
     private void createDemoData() {
         log.info("Creating demo driving data for testing");
 
-        // driver1에 대한 데모 데이터 생성
         User user = userRepository.findByUsername("driver1").orElseThrow();
 
         // 3월 26일 세션 2개
@@ -71,7 +68,7 @@ public class DemoDataLoader implements CommandLineRunner {
         createSession(user, march26.atTime(10, 0), 30, 75, 2, 1, 0);
         createSession(user, march26.atTime(15, 0), 45, 85, 1, 0, 1);
 
-        // 3월 28일 세션 2개 (어제)
+        // 3월 28일 세션 2개
         LocalDate march28 = LocalDate.of(2025, 3, 28);
         createSession(user, march28.atTime(9, 0), 25, 65, 3, 2, 0);
         createSession(user, march28.atTime(17, 0), 40, 90, 0, 1, 0);
@@ -86,7 +83,7 @@ public class DemoDataLoader implements CommandLineRunner {
         createSession(user, april23.atTime(10, 0), 30, 75, 2, 1, 0);
         createSession(user, april23.atTime(15, 0), 45, 85, 1, 0, 1);
 
-        // 4월 26일 세션 2개 (어제)
+        // 4월 26일 세션 2개
         LocalDate april26 = LocalDate.of(2025, 4, 26);
         createSession(user, april26.atTime(9, 0), 25, 65, 3, 2, 0);
         createSession(user, april26.atTime(17, 0), 40, 90, 0, 1, 0);
@@ -105,7 +102,7 @@ public class DemoDataLoader implements CommandLineRunner {
 
         // 영상 데이터 생성 - 연관관계 메서드 사용 대신 직접 설정
         DrivingVideo video = new DrivingVideo();
-        video.setUser(user); // 연관관계를 직접 설정
+        video.setUser(user);
         video.setFilePath("demo_video_" + sessionTime.toString());
         video.setDuration(durationMinutes);
         video.setStatus(VideoStatus.ANALYZED);

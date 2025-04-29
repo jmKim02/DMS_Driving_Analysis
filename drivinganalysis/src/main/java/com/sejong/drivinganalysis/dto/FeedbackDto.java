@@ -1,7 +1,5 @@
 package com.sejong.drivinganalysis.dto;
 
-import com.sejong.drivinganalysis.entity.enums.FeedbackType;
-import com.sejong.drivinganalysis.entity.enums.SeverityLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

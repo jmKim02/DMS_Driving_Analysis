@@ -24,14 +24,12 @@ public interface AnalysisResultRepository extends JpaRepository<AnalysisResult, 
 
     List<AnalysisResult> findByAnalyzedAtBetween(LocalDateTime startDateTime, LocalDateTime endDateTime);
 
-    // AnalysisResultRepository에 추가할 메서드
     @Query("SELECT DISTINCT result.user.userId FROM AnalysisResult result WHERE result.analyzedAt BETWEEN :startDateTime AND :endDateTime")
     List<Long> findDistinctUserIdsByAnalyzedAtBetween(
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime
     );
 
-    // 여러 사용자의 결과를 한 번에 조회하는 메서드
     List<AnalysisResult> findByUserUserIdInAndAnalyzedAtBetween(
             List<Long> userIds,
             LocalDateTime startDateTime,
