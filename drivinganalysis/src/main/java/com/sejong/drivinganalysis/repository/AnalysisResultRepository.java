@@ -2,6 +2,8 @@ package com.sejong.drivinganalysis.repository;
 
 import com.sejong.drivinganalysis.entity.AnalysisResult;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -19,4 +21,20 @@ public interface AnalysisResultRepository extends JpaRepository<AnalysisResult, 
 
     long countByUserUserIdAndAnalyzedAtBetween(
             Long userId, LocalDateTime startDateTime, LocalDateTime endDateTime);
+
+    List<AnalysisResult> findByAnalyzedAtBetween(LocalDateTime startDateTime, LocalDateTime endDateTime);
+
+    // AnalysisResultRepository에 추가할 메서드
+    @Query("SELECT DISTINCT result.user.userId FROM AnalysisResult result WHERE result.analyzedAt BETWEEN :startDateTime AND :endDateTime")
+    List<Long> findDistinctUserIdsByAnalyzedAtBetween(
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
+    );
+
+    // 여러 사용자의 결과를 한 번에 조회하는 메서드
+    List<AnalysisResult> findByUserUserIdInAndAnalyzedAtBetween(
+            List<Long> userIds,
+            LocalDateTime startDateTime,
+            LocalDateTime endDateTime
+    );
 }
