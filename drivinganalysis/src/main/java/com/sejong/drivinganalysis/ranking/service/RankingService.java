@@ -156,27 +156,35 @@ public class RankingService {
         LocalDate monthEnd = monthStart.with(TemporalAdjusters.lastDayOfMonth());
         String period = String.format("%d-%02d", year, month);
 
+        // 기존 랭킹 데이터 제거
         List<Ranking> existing = rankingRepository.findByRankingTypeAndPeriodOrderByScoreDesc(RankingType.MONTHLY, period);
         if (!existing.isEmpty()) {
             rankingRepository.deleteAll(existing);
             rankingRepository.flush();
         }
 
+        // 해당 월의 모든 UserScore 가져오기
         List<UserScore> scores = userScoreRepository.findByScoreDateBetween(monthStart, monthEnd);
 
+        // 유저별로 그룹화 후 dailyScore 기준 평균 계산
         Map<User, List<UserScore>> grouped = scores.stream()
                 .collect(Collectors.groupingBy(UserScore::getUser));
+
         List<AggregatedScore> aggregatedScores = new ArrayList<>();
+
         for (Map.Entry<User, List<UserScore>> entry : grouped.entrySet()) {
             double avg = entry.getValue().stream()
-                    .mapToInt(us -> us.getMonthlyScore() != null ? us.getMonthlyScore() : 0)
+                    .mapToInt(us -> us.getDailyScore() != null ? us.getDailyScore() : 0)
                     .average()
                     .orElse(0.0);
+
             aggregatedScores.add(new AggregatedScore(entry.getKey(), avg));
         }
 
+        // 평균 점수 내림차순 정렬
         aggregatedScores.sort(Comparator.comparingDouble(AggregatedScore::getAverage).reversed());
 
+        // 랭킹 저장
         int rank = 1;
         for (AggregatedScore as : aggregatedScores) {
             Ranking ranking = Ranking.createRanking(
