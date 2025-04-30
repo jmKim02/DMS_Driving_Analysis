@@ -30,9 +30,6 @@ public class UserScore extends BaseTimeEntity {
     @Column(name = "monthly_score")
     private Integer monthlyScore;
 
-    @Column(name = "score")
-    private Integer score;
-
     @Column(name = "score_date", nullable = false)
     private LocalDate scoreDate;
 
@@ -40,7 +37,6 @@ public class UserScore extends BaseTimeEntity {
     public static UserScore createUserScore(User user, Integer score, LocalDate scoreDate) {
         UserScore userScore = new UserScore();
         userScore.user = user;
-        userScore.score = score;
         userScore.scoreDate = scoreDate;
         return userScore;
     }
