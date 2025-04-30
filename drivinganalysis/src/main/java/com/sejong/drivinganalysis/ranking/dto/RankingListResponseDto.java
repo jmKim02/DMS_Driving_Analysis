@@ -11,8 +11,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class RankingListResponseDto {
-    private RankingType rankingType;   // MONTHLY
-    private String period;             // 예: "2025-04"
+    private RankingType rankingType;   //  DAILY, WEEKLY, MONTHLY
+    private String period;             // "2025-04-29"(daily), "2025-W18"(weekly), "2025-04"(monthly)
     private List<RankingSummaryDto> rankings;
     private long totalElements;
     private int totalPages;

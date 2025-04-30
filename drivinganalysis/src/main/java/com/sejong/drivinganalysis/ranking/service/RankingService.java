@@ -1,8 +1,8 @@
 package com.sejong.drivinganalysis.ranking.service;
 
 import com.sejong.drivinganalysis.entity.Ranking;
-import com.sejong.drivinganalysis.entity.UserScore;
 import com.sejong.drivinganalysis.entity.User;
+import com.sejong.drivinganalysis.entity.UserScore;
 import com.sejong.drivinganalysis.entity.enums.RankingType;
 import com.sejong.drivinganalysis.ranking.dto.RankingListResponseDto;
 import com.sejong.drivinganalysis.ranking.dto.RankingSummaryDto;
@@ -27,9 +27,9 @@ public class RankingService {
     private final RankingRepository rankingRepository;
     private final UserScoreRepository userScoreRepository;
 
-    // 조회: 월간 랭킹 (전체 목록 + 내 랭킹 정보 포함)
+    // 조회: 월간 랭킹 (Ranking 테이블 기반 조회)
     public RankingListResponseDto getMonthlyRankingWithMyRank(int year, int month, int page, int size, Long myUserId) {
-        String period = String.format("%d-%02d", year, month);  // 예: "2025-04"
+        String period = String.format("%d-%02d", year, month);
         Pageable pageable = PageRequest.of(page, size, Sort.by("rankPosition").ascending());
         Page<Ranking> rankingPage = rankingRepository.findByRankingTypeAndPeriodOrderByRankPositionAsc(RankingType.MONTHLY, period, pageable);
 
@@ -60,54 +60,132 @@ public class RankingService {
         return response;
     }
 
-    // Overload: if myUserId is not provided
+    // Overload
     public RankingListResponseDto getMonthlyRanking(int year, int month, int page, int size) {
         return getMonthlyRankingWithMyRank(year, month, page, size, null);
     }
 
-    // 계산 API: 월간 랭킹 재계산 및 저장 (수동 트리거용; 매일 자동 업데이트 가능하도록 @Scheduled 적용 가능)
+    // 조회: 일간 랭킹 (UserScore 기반)
+    public RankingListResponseDto getDailyRankingWithMyRank(String date, int page, int size, Long myUserId) {
+        LocalDate targetDate = LocalDate.parse(date);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "dailyScore"));
+        Page<UserScore> scorePage = userScoreRepository.findByScoreDateBetween(targetDate, targetDate, pageable);
+
+        RankingListResponseDto response = RankingListResponseDto.builder()
+                .rankingType(RankingType.DAILY)
+                .period(date)
+                .rankings(scorePage.getContent().stream()
+                        .map(us -> RankingSummaryDto.builder()
+                                .rankPosition(null)
+                                .userId(us.getUser().getUserId())
+                                .username(us.getUser().getUsername())
+                                .averageScore(us.getDailyScore() != null ? us.getDailyScore().doubleValue() : 0.0)
+                                .build())
+                        .collect(Collectors.toList()))
+                .totalElements(scorePage.getTotalElements())
+                .totalPages(scorePage.getTotalPages())
+                .page(scorePage.getNumber())
+                .size(scorePage.getSize())
+                .build();
+
+        if (myUserId != null) {
+            List<UserScore> allScores = userScoreRepository.findByScoreDateBetween(targetDate, targetDate);
+            allScores.sort(Comparator.comparing(UserScore::getDailyScore, Comparator.nullsLast(Comparator.reverseOrder())));
+
+            for (int i = 0; i < allScores.size(); i++) {
+                if (allScores.get(i).getUser().getUserId().equals(myUserId)) {
+                    response.setMyRankPosition(i + 1);
+                    response.setMyScore(allScores.get(i).getDailyScore().doubleValue());
+                    break;
+                }
+            }
+        }
+
+        return response;
+    }
+
+    // 조회: 주간 랭킹 (UserScore 기반)
+    public RankingListResponseDto getWeeklyRankingWithMyRank(int year, int week, int page, int size, Long myUserId) {
+        LocalDate startOfYear = LocalDate.of(year, 1, 1);
+        LocalDate startOfWeek = startOfYear.plusWeeks(week - 1);
+        LocalDate endOfWeek = startOfWeek.plusDays(6);
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "weeklyScore"));
+        Page<UserScore> scorePage = userScoreRepository.findByScoreDateBetween(startOfWeek, endOfWeek, pageable);
+
+        String period = String.format("%d-W%d", year, week);
+
+        RankingListResponseDto response = RankingListResponseDto.builder()
+                .rankingType(RankingType.WEEKLY)
+                .period(period)
+                .rankings(scorePage.getContent().stream()
+                        .map(us -> RankingSummaryDto.builder()
+                                .rankPosition(null)
+                                .userId(us.getUser().getUserId())
+                                .username(us.getUser().getUsername())
+                                .averageScore(us.getWeeklyScore() != null ? us.getWeeklyScore().doubleValue() : 0.0)
+                                .build())
+                        .collect(Collectors.toList()))
+                .totalElements(scorePage.getTotalElements())
+                .totalPages(scorePage.getTotalPages())
+                .page(scorePage.getNumber())
+                .size(scorePage.getSize())
+                .build();
+
+        if (myUserId != null) {
+            List<UserScore> allScores = userScoreRepository.findByScoreDateBetween(startOfWeek, endOfWeek);
+            allScores.sort(Comparator.comparing(UserScore::getWeeklyScore, Comparator.nullsLast(Comparator.reverseOrder())));
+
+            for (int i = 0; i < allScores.size(); i++) {
+                if (allScores.get(i).getUser().getUserId().equals(myUserId)) {
+                    response.setMyRankPosition(i + 1);
+                    response.setMyScore(allScores.get(i).getWeeklyScore().doubleValue());
+                    break;
+                }
+            }
+        }
+
+        return response;
+    }
+
+
     @Transactional
     public void calculateAndSaveMonthlyRanking(int year, int month) {
         LocalDate monthStart = LocalDate.of(year, month, 1);
         LocalDate monthEnd = monthStart.with(TemporalAdjusters.lastDayOfMonth());
         String period = String.format("%d-%02d", year, month);
 
-        // 1. 기존 월간 랭킹 데이터 삭제 (해당 period)
-        // 기존 데이터 삭제를 위해 period 기반으로 조회하고 삭제합니다.
         List<Ranking> existing = rankingRepository.findByRankingTypeAndPeriodOrderByScoreDesc(RankingType.MONTHLY, period);
         if (!existing.isEmpty()) {
             rankingRepository.deleteAll(existing);
-            rankingRepository.flush();  // 삭제를 DB에 즉시 반영
+            rankingRepository.flush();
         }
 
-        // 2. 해당 월의 모든 UserScore 레코드 조회
         List<UserScore> scores = userScoreRepository.findByScoreDateBetween(monthStart, monthEnd);
 
-        // 3. 사용자별로 그룹핑하여, 점수 평균 계산 (하루 여러 번 들어온 점수를 평균)
         Map<User, List<UserScore>> grouped = scores.stream()
                 .collect(Collectors.groupingBy(UserScore::getUser));
         List<AggregatedScore> aggregatedScores = new ArrayList<>();
         for (Map.Entry<User, List<UserScore>> entry : grouped.entrySet()) {
             double avg = entry.getValue().stream()
-                    .mapToInt(UserScore::getScore)
+                    .mapToInt(us -> us.getMonthlyScore() != null ? us.getMonthlyScore() : 0)
                     .average()
                     .orElse(0.0);
             aggregatedScores.add(new AggregatedScore(entry.getKey(), avg));
         }
 
-        // 4. 평균 점수를 내림차순으로 정렬 (높은 점수가 1등)
         aggregatedScores.sort(Comparator.comparingDouble(AggregatedScore::getAverage).reversed());
 
-        // 5. 순위 부여하고 Ranking 엔티티 생성 후 저장
         int rank = 1;
         for (AggregatedScore as : aggregatedScores) {
             Ranking ranking = Ranking.createRanking(
                     as.getUser(),
-                    (int)Math.round(as.getAverage()),  // 평균 점수를 반올림해서 정수로 저장
+                    (int) Math.round(as.getAverage()),
                     rank++,
                     RankingType.MONTHLY,
-                    monthEnd,      // 집계 기준일 (예: 해당 월의 마지막 날)
-                    period         // "2025-04"
+                    monthEnd,
+                    period
             );
             rankingRepository.save(ranking);
         }

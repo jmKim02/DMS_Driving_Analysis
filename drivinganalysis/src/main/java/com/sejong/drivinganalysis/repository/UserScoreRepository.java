@@ -1,6 +1,8 @@
 package com.sejong.drivinganalysis.repository;
 
 import com.sejong.drivinganalysis.entity.UserScore;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -23,4 +25,7 @@ public interface UserScoreRepository extends JpaRepository<UserScore, Long> {
     List<UserScore> findByUserUserIdAndScoreDateBetweenOrderByScoreDateAsc(Long userId, LocalDate startDate, LocalDate endDate);
   
     List<UserScore> findByScoreDateBetween(LocalDate startDate, LocalDate endDate);
+
+    Page<UserScore> findByScoreDateBetween(LocalDate startDate, LocalDate endDate, Pageable pageable); //추가
+
 }
