@@ -2,29 +2,26 @@ package com.sejong.drivinganalysis.scheduler;
 
 import com.sejong.drivinganalysis.ranking.service.RankingService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class RankingScheduler {
 
     private final RankingService rankingService;
 
-    /**
-     * 매일 자정(00:00)에 실행되어, 현재 월의 랭킹을 계산 및 저장
-     *
-     */
-    @Scheduled(cron = "0 0 * * * *") //원래 0 0 0 * * *
+    @Scheduled(cron = "*/15 * * * * *") // 5초마다 실행
     public void updateMonthlyRankingAutomatically() {
         LocalDate today = LocalDate.now();
         int year = today.getYear();
         int month = today.getMonthValue();
+
+        log.info("[스케줄러] 월간 랭킹 자동 업데이트 시작: {}년 {}월", year, month);  // 이제 오류 안 남
         rankingService.calculateAndSaveMonthlyRanking(year, month);
     }
-
-
-
 }

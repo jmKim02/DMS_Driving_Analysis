@@ -15,9 +15,39 @@ public class RankingController {
     private final RankingService rankingService;
 
     /**
+     * 일간 랭킹 조회 API
+     * 요청 예시: GET /rankings/daily?date=2025-04-29&page=0&size=50&myUserId=3
+     */
+    @GetMapping("/daily")
+    public ResponseEntity<ApiResponse<RankingListResponseDto>> getDailyRanking(
+            @RequestParam String date,  // yyyy-MM-dd 형식
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) Long myUserId
+    ) {
+        RankingListResponseDto result = rankingService.getDailyRankingWithMyRank(date, page, size, myUserId);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    /**
+     * 주간 랭킹 조회 API
+     * 요청 예시: GET /rankings/weekly?year=2025&week=18&page=0&size=50&myUserId=3
+     */
+    @GetMapping("/weekly")
+    public ResponseEntity<ApiResponse<RankingListResponseDto>> getWeeklyRanking(
+            @RequestParam int year,
+            @RequestParam int week,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) Long myUserId
+    ) {
+        RankingListResponseDto result = rankingService.getWeeklyRankingWithMyRank(year, week, page, size, myUserId);
+        return ResponseEntity.ok(ApiResponse.success(result));
+    }
+
+    /**
      * 월간 랭킹 조회 API
      * 요청 예시: GET /rankings/monthly?year=2025&month=4&page=0&size=50&myUserId=3
-     * - 전체 상위 1~50위와 함께, (옵션으로) 현재 사용자의 순위 및 점수를 함께 반환
      */
     @GetMapping("/monthly")
     public ResponseEntity<ApiResponse<RankingListResponseDto>> getMonthlyRanking(
@@ -33,8 +63,6 @@ public class RankingController {
 
     /**
      * 월간 랭킹 계산 API (수동 트리거용)
-     * 요청 예시: POST /rankings/monthly/calculate?year=2025&month=4
-     * - 해당 월의 모든 운전자 점수를 집계하여 랭킹을 재계산하고 업데이트
      */
     @PostMapping("/monthly/calculate")
     public ResponseEntity<ApiResponse<String>> calculateMonthlyRanking(
