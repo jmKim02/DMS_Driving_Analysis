@@ -1,3 +1,4 @@
+/*
 package com.sejong.drivinganalysis.scheduler;
 
 import com.sejong.drivinganalysis.entity.User;
@@ -24,7 +25,7 @@ public class ScoreGeneratorScheduler {
     private final Random random = new Random();
 
     @Transactional
-    @Scheduled(cron = "*/5 * * * * *") // 30초마다 실행
+    @Scheduled(cron = "* * * * * *")
     public void generateTestScore() {
         List<User> users = userRepository.findAll();
         if (users.isEmpty()) {
@@ -39,7 +40,7 @@ public class ScoreGeneratorScheduler {
                 .findByUserUserIdAndScoreDate(user.getUserId(), today)
                 .orElse(UserScore.createUserScore(user, null, today));
 
-        int randomScore = 50 + random.nextInt(51); // 50~100점
+        int randomScore = 50 + random.nextInt(51);
         score.setDailyScore(randomScore);
         score.setWeeklyScore(randomScore);
         score.setMonthlyScore(randomScore);
@@ -49,3 +50,4 @@ public class ScoreGeneratorScheduler {
         log.info("[테스트 점수 생성] {}님에게 점수 {}점 부여 완료", user.getUsername(), randomScore);
     }
 }
+*/

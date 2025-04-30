@@ -10,12 +10,20 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "challenges")
+@Table(
+        name = "challenges",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_challenge_unique",
+                columnNames = {"title", "start_date", "end_date"}
+        )
+)
+
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Challenge extends BaseTimeEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "challenge_id")
     private Long challengeId;
 
@@ -27,6 +35,8 @@ public class Challenge extends BaseTimeEntity {
     @Column(name = "target_value", nullable = false)
     private Long targetValue;
 
+    @Column(name = "target_metric", nullable = false)
+    private String targetMetric; //추가
 
     @Enumerated(EnumType.STRING)
     @Column(name = "challenge_type", nullable = false)
@@ -47,12 +57,14 @@ public class Challenge extends BaseTimeEntity {
 
     // 생성 메서드
     public static Challenge createChallenge(String title, String description, Long targetValue,
+                                            String targetMetric,
                                             ChallengeType challengeType, ChallengeCategory category,
                                             String rewardInfo, LocalDate startDate, LocalDate endDate) {
         Challenge challenge = new Challenge();
         challenge.title = title;
         challenge.description = description;
         challenge.targetValue = targetValue;
+        challenge.targetMetric = targetMetric;
         challenge.challengeType = challengeType;
         challenge.category = category;
         challenge.rewardInfo = rewardInfo;
@@ -61,3 +73,4 @@ public class Challenge extends BaseTimeEntity {
         return challenge;
     }
 }
+

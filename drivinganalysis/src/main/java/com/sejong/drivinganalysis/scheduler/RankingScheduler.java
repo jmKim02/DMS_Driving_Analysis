@@ -15,13 +15,13 @@ public class RankingScheduler {
 
     private final RankingService rankingService;
 
-    @Scheduled(cron = "*/15 * * * * *") // 5초마다 실행
+    @Scheduled(cron = "0 0 0 * * *")
     public void updateMonthlyRankingAutomatically() {
         LocalDate today = LocalDate.now();
         int year = today.getYear();
         int month = today.getMonthValue();
 
-        log.info("[스케줄러] 월간 랭킹 자동 업데이트 시작: {}년 {}월", year, month);  // 이제 오류 안 남
+        log.info("[스케줄러] 월간 랭킹 자동 업데이트 시작: {}년 {}월", year, month);
         rankingService.calculateAndSaveMonthlyRanking(year, month);
     }
 }
