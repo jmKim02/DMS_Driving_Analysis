@@ -123,6 +123,7 @@ public class FeedbackService {
         return generatedFeedbacks;
     }
 
+
     /**
      * 단일 사용자에 대한 주간 피드백 생성 (내부 메서드)
      */
@@ -148,8 +149,8 @@ public class FeedbackService {
                 previousSunday
         );
 
-        // 피드백 객체 생성 (아직 저장하지 않음)
-        return Feedback.createFeedback(
+        // createWeeklyFeedback 메서드 사용 (수정된 부분)
+        return Feedback.createWeeklyFeedback(
                 user,
                 mostFrequentRisk.getKey(),
                 content,
@@ -293,6 +294,78 @@ public class FeedbackService {
                 .riskBehaviorCounts(riskBehaviorCountsString)
                 .riskTimePattern(timePattern)
                 .generatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * 저장된 주간 피드백 조회
+     * 스케줄러에 의해 생성된 가장 최근의 주간 피드백을 조회합니다.
+     */
+    @Transactional(readOnly = true)
+    public FeedbackDto.WeeklyFeedbackResponse getStoredWeeklyFeedback(Long userId) {
+        // 사용자 확인
+        if (!userRepository.existsById(userId)) {
+            throw new ApiException("USER_NOT_FOUND", "User not found: " + userId);
+        }
+
+        // 가장 최근의 주간 피드백 조회
+        Feedback weeklyFeedback = feedbackRepository.findFirstByUserUserIdAndFeedbackCategoryOrderByGeneratedAtDesc(
+                userId, "WEEKLY");
+
+        if (weeklyFeedback == null) {
+            // 저장된 주간 피드백이 없는 경우
+            return FeedbackDto.WeeklyFeedbackResponse.builder()
+                    .userId(userId)
+                    .mostFrequentRiskBehavior("저장된 주간 피드백이 없습니다.")
+                    .count(0)
+                    .riskBehaviorCounts(new HashMap<>())
+                    .riskTimePattern("데이터 없음")
+                    .generatedAt(LocalDateTime.now())
+                    .build();
+        }
+
+        // 피드백 내용 분석하여 응답 구성
+        // (주: 실제 구현에서는 더 견고한 방식으로 데이터를 저장/파싱하는 것이 좋습니다)
+        String content = weeklyFeedback.getContent();
+        String mostFrequentRiskName = getFeedbackTypeName(weeklyFeedback.getFeedbackType());
+
+        // 내용에서 위험 행동 횟수 추출 (예: "총 5회 감지되었습니다"에서 숫자 추출)
+        int count = 0;
+        try {
+            String countPattern = "총 (\\d+)회 감지";
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(countPattern);
+            java.util.regex.Matcher matcher = pattern.matcher(content);
+            if (matcher.find()) {
+                count = Integer.parseInt(matcher.group(1));
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract count from weekly feedback content", e);
+        }
+
+        // 시간 패턴 추출 (예: "이 행동은 월요일 오전(9시경)에 가장 빈번하게 발생했습니다.")
+        String timePattern = "데이터 없음";
+        try {
+            String timePatternRegex = "이 행동은 ([^.]+)에 가장 빈번하게 발생";
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(timePatternRegex);
+            java.util.regex.Matcher matcher = pattern.matcher(content);
+            if (matcher.find()) {
+                timePattern = matcher.group(1);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract time pattern from weekly feedback content", e);
+        }
+
+        // 단순화된 위험 행동 카운트 맵 (실제로는 더 정확한 데이터가 필요할 수 있음)
+        Map<String, Integer> riskBehaviorCounts = new HashMap<>();
+        riskBehaviorCounts.put(mostFrequentRiskName, count);
+
+        return FeedbackDto.WeeklyFeedbackResponse.builder()
+                .userId(userId)
+                .mostFrequentRiskBehavior(mostFrequentRiskName)
+                .count(count)
+                .riskBehaviorCounts(riskBehaviorCounts)
+                .riskTimePattern(timePattern)
+                .generatedAt(weeklyFeedback.getGeneratedAt())
                 .build();
     }
 

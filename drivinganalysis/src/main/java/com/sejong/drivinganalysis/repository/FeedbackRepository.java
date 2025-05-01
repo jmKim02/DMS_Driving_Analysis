@@ -29,11 +29,17 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Long> {
             "(SELECT MAX(f2.generatedAt) FROM Feedback f2 WHERE f2.user.userId = :userId)")
     Feedback findLatestByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT f FROM Feedback f WHERE f.user.userId = :userId AND f.feedbackType = 'GENERAL' " +
-            "AND f.content LIKE '%주간 운전 분석%' AND f.generatedAt BETWEEN :startDate AND :endDate")
+    // 주간 피드백 조회를 위한 메서드 추가
+    List<Feedback> findByUserUserIdAndFeedbackCategoryOrderByGeneratedAtDesc(Long userId, String feedbackCategory);
+
+    // 가장 최근의 주간 피드백 조회
+    Feedback findFirstByUserUserIdAndFeedbackCategoryOrderByGeneratedAtDesc(Long userId, String feedbackCategory);
+
+    // 특정 기간의 주간 피드백 조회 (기존 메서드 수정)
+    @Query("SELECT f FROM Feedback f WHERE f.user.userId = :userId AND f.feedbackCategory = 'WEEKLY' " +
+            "AND f.generatedAt BETWEEN :startDate AND :endDate")
     List<Feedback> findWeeklyFeedbackByUserIdAndDateRange(
             @Param("userId") Long userId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
-
 }

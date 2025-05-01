@@ -74,12 +74,21 @@ public class DemoDataLoader implements CommandLineRunner {
     private void createDemoData() {
         log.info("Creating demo driving data for testing");
 
-        User user = userRepository.findByUsername("driver1").orElseThrow();
+        User user1= userRepository.findByUsername("driver1").orElseThrow();
+        User user2 = userRepository.findByUsername("driver2").orElseThrow();
+        User user3 = userRepository.findByUsername("driver3").orElseThrow();
+        User user4 = userRepository.findByUsername("driver4").orElseThrow();
+        User user5 = userRepository.findByUsername("driver5").orElseThrow();
 
         // 1월부터 4월까지 (4개월) 데이터 생성
         for (int month = 1; month <= 4; month++) {
-            createMonthlyData(user, month);
+            createMonthlyData(user1, month);
         }
+
+        createMonthlyData(user2, 4);
+        createMonthlyData(user3, 4);
+        createMonthlyData(user4, 4);
+        createMonthlyData(user5, 4);
 
         log.info("Demo driving data created successfully");
     }

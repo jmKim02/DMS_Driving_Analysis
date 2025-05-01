@@ -189,7 +189,7 @@ public class RankingService {
         for (AggregatedScore as : aggregatedScores) {
             Ranking ranking = Ranking.createRanking(
                     as.getUser(),
-                    (int) Math.round(as.getAverage()),
+                    (int) Math.round(as.getAverage()), // 반올림: 회의 할 내용 -> 운전 점수 부분에서 월 점수는 버림.
                     rank++,
                     RankingType.MONTHLY,
                     monthEnd,

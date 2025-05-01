@@ -37,6 +37,10 @@ public class Feedback extends BaseTimeEntity{
     @Column(name = "generated_at", nullable = false)
     private LocalDateTime generatedAt;
 
+    // 주간 피드백 등 특별 피드백 유형을 구분하기 위한 필드 추가
+    @Column(name = "feedback_category")
+    private String feedbackCategory;
+
     // 연관관계 메서드
     public void setUser(User user) {
         this.user = user;
@@ -52,6 +56,20 @@ public class Feedback extends BaseTimeEntity{
         feedback.content = content;
         feedback.severityLevel = severityLevel;
         feedback.generatedAt = LocalDateTime.now();
+        feedback.feedbackCategory = null; // 기본값은 null (일반 피드백)
         return feedback;
+    }
+
+    // 주간 피드백 생성 메서드 추가
+    public static Feedback createWeeklyFeedback(User user, FeedbackType feedbackType,
+                                                String content, SeverityLevel severityLevel) {
+        Feedback feedback = createFeedback(user, feedbackType, content, severityLevel);
+        feedback.feedbackCategory = "WEEKLY";
+        return feedback;
+    }
+
+    // 피드백 카테고리 설정 메서드 (필요시 사용)
+    public void setFeedbackCategory(String category) {
+        this.feedbackCategory = category;
     }
 }

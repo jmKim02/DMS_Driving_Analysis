@@ -94,6 +94,26 @@ public class FeedbackController {
     }
 
     /**
+     * 저장된 주간 피드백 조회
+     * 스케줄러에 의해 생성된 주간 피드백을 조회합니다.
+     */
+    @GetMapping("/users/{userId}/stored-weekly-feedback")
+    public ResponseEntity<ApiResponse<FeedbackDto.WeeklyFeedbackResponse>> getStoredWeeklyFeedback(
+            @PathVariable Long userId) {
+
+        log.info("Fetching stored weekly feedback for userId: {}", userId);
+
+        // 권한 검증
+        if (!isAuthorizedUser(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.error("ACCESS_DENIED", "해당 사용자의 피드백에 접근할 권한이 없습니다."));
+        }
+
+        FeedbackDto.WeeklyFeedbackResponse weeklyFeedback = feedbackService.getStoredWeeklyFeedback(userId);
+        return ResponseEntity.ok(ApiResponse.success(weeklyFeedback));
+    }
+
+    /**
      * 현재 인증된 사용자가 요청한 사용자 ID에 접근 권한이 있는지 확인
      */
     private boolean isAuthorizedUser(Long userId) {

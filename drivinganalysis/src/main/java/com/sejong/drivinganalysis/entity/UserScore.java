@@ -34,14 +34,6 @@ public class UserScore extends BaseTimeEntity {
     private LocalDate scoreDate;
 
     // 생성 메서드
-    public static UserScore createUserScore(User user, Integer score, LocalDate scoreDate) {
-        UserScore userScore = new UserScore();
-        userScore.user = user;
-        userScore.scoreDate = scoreDate;
-        return userScore;
-    }
-
-    // 생성 메서드
     public static UserScore createUserScore(User user, Integer dailyScore,
                                             Integer weeklyScore, Integer monthlyScore,
                                             LocalDate scoreDate) {

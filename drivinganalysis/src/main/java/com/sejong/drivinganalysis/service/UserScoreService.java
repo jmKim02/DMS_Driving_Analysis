@@ -116,7 +116,7 @@ public class UserScoreService {
                     .sum();
 
             // 오늘 점수 포함 평균 계산
-            int monthlyScore = (monthlyScoreSum + dailyScore) / (monthScores.size() + 1);
+            int monthlyScore = (monthlyScoreSum + dailyScore) / (monthScores.size() + 1); // 버림
             userScore.setMonthlyScore(monthlyScore);
         }
 

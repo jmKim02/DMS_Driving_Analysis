@@ -3,12 +3,12 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/driving_analysis?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
-    password: ehrekf1!
+    password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create  # 테스트용
+      ddl-auto: update  # 테스트용
     properties:
       hibernate:
         format_sql: true
