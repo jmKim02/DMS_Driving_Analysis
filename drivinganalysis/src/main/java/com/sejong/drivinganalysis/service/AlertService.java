@@ -28,8 +28,8 @@ public class AlertService {
      * 생성자: 연결 유지를 위한 핑 이벤트 스케줄링
      */
     public AlertService() {
-        // 연결 유지를 위한 핑 이벤트 스케줄링 (15초마다)
-        scheduler.scheduleAtFixedRate(this::sendKeepAliveToAll, 15, 15, TimeUnit.SECONDS);
+        // 연결 유지를 위한 핑 이벤트 스케줄링 (30초마다)
+        scheduler.scheduleAtFixedRate(this::sendKeepAliveToAll, 30, 30, TimeUnit.SECONDS);
     }
 
     /**
@@ -80,6 +80,7 @@ public class AlertService {
     /**
      * 모든 연결에 핑 이벤트 전송 (연결 유지용)
      */
+    // AlertService.java에 추가
     private void sendKeepAliveToAll() {
         userEmitters.forEach((userId, emitter) -> {
             try {
@@ -89,7 +90,12 @@ public class AlertService {
                 log.debug("Sent keep-alive ping to userId: {}", userId);
             } catch (IOException e) {
                 log.warn("Failed to send ping to userId: {}, removing connection", userId);
-                emitter.completeWithError(e);
+                // 명시적으로 완료 처리 추가
+                emitter.complete();
+                userEmitters.remove(userId);
+            } catch (Exception e) {
+                log.error("Unexpected error sending ping to userId: {}", userId, e);
+                emitter.complete();
                 userEmitters.remove(userId);
             }
         });
@@ -132,8 +138,19 @@ public class AlertService {
     public void removeConnection(Long userId) {
         SseEmitter emitter = userEmitters.remove(userId);
         if (emitter != null) {
-            emitter.complete();
-            log.info("Removed existing SSE connection for userId: {}", userId);
+            try {
+                // 클라이언트에게 명시적 종료 알림 전송
+                emitter.send(SseEmitter.event()
+                        .name("close")
+                        .data(Map.of("message", "Connection closed by server",
+                                "timestamp", System.currentTimeMillis())));
+            } catch (Exception e) {
+                log.debug("Error sending close event: {}", e.getMessage());
+            } finally {
+                // 어떤 경우에도 반드시 연결 종료
+                emitter.complete();
+                log.info("Removed existing SSE connection for userId: {}", userId);
+            }
         }
     }
 

@@ -162,7 +162,10 @@ public class FrameWebSocketHandler {
     @OnError
     public void onError(Session session, Throwable error) {
         log.error("WebSocket 오류: sessionId={}", session.getId(), error);
-        sendErrorMessage(session, "연결 오류: " + error.getMessage());
+        // 세션이 열려있는 경우에만 오류 메시지 전송 시도
+        if (session.isOpen()) {
+            sendErrorMessage(session, "연결 오류: " + error.getMessage());
+        }
     }
 
     /**
@@ -180,11 +183,16 @@ public class FrameWebSocketHandler {
      * 오류 메시지 전송
      */
     private void sendErrorMessage(Session session, String errorMessage) {
+        if (!session.isOpen()) {
+            return; // 세션이 이미 닫힌 경우 메시지 전송 시도하지 않음
+        }
+
         try {
             String errorJson = String.format("{\"status\":\"error\",\"message\":\"%s\"}", errorMessage);
             session.getBasicRemote().sendText(errorJson);
         } catch (IOException e) {
-            log.error("오류 메시지 전송 실패", e);
+            // 로그 레벨을 ERROR에서 WARN으로 낮춤
+            log.warn("오류 메시지 전송 실패: {}", e.getMessage());
         }
     }
 }

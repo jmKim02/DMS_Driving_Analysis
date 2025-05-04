@@ -63,6 +63,30 @@ public class VideoService {
             // 마지막 프레임 타임스탬프 업데이트
             userLastFrameTimestamps.put(user.getUserId(), frameBatch.getTimestamp());
 
+            // 프레임 데이터 검증 로그 추가
+            boolean hasEmptyFrames = false;
+            boolean hasInvalidFrames = false;
+            int emptyFrameCount = 0;
+
+            for (int i = 0; i < frameBatch.getFrames().size(); i++) {
+                VideoDto.FrameData frame = frameBatch.getFrames().get(i);
+                if (frame.getData() == null || frame.getData().length == 0) {
+                    hasEmptyFrames = true;
+                    emptyFrameCount++;
+                    log.warn("Empty frame detected in batch - userId: {}, batchId: {}, frameIndex: {}, frameId: {}",
+                            user.getUserId(), frameBatch.getBatchId(), i, frame.getFrameId());
+                } else if (frame.getData().length < 100) { // 최소 프레임 크기 검증 (예: 100바이트 미만인 경우)
+                    hasInvalidFrames = true;
+                    log.warn("Suspiciously small frame detected - userId: {}, batchId: {}, frameIndex: {}, frameId: {}, size: {} bytes",
+                            user.getUserId(), frameBatch.getBatchId(), i, frame.getFrameId(), frame.getData().length);
+                }
+            }
+
+            if (hasEmptyFrames || hasInvalidFrames) {
+                log.warn("Frame quality issues detected - userId: {}, batchId: {}, emptyFrames: {}, totalFrames: {}",
+                        user.getUserId(), frameBatch.getBatchId(), emptyFrameCount, frameBatch.getFrames().size());
+            }
+
             // 비동기로 AI 분석 요청 - 실시간 졸음 감지를 위한 간소화된 분석
             CompletableFuture.runAsync(() -> {
                 try {
@@ -134,6 +158,9 @@ public class VideoService {
             // 세션 정보 정리
             userSessionStartTimes.remove(request.getUserId());
             userLastFrameTimestamps.remove(request.getUserId());
+
+            // SSE 연결 제거
+            alertService.removeConnection(request.getUserId());
 
             // 분석 실패 시 오류 응답
             if (!finalAnalysis.getAnalysisCompleted()) {

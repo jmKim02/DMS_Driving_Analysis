@@ -50,6 +50,7 @@ public class GrpcClientService {
                 .keepAliveTime(30, TimeUnit.SECONDS) // 연결 유지 설정
                 .keepAliveTimeout(10, TimeUnit.SECONDS)
                 .keepAliveWithoutCalls(true) // 추가
+                .maxInboundMessageSize(10 * 1024 * 1024) // 10MB로 설정
                 .build();
         blockingStub = VideoAnalysisServiceGrpc.newBlockingStub(channel);
         log.info("gRPC client initialized, connected to AI server at {}:{}", aiServerHost, aiServerPort);
@@ -62,6 +63,23 @@ public class GrpcClientService {
     public RealtimeAnalysisResponse analyzeFrames(Long userId, Integer batchId, Long timestamp, List<VideoDto.FrameData> frames) {
         log.info("Sending gRPC request to AI server for userId: {}, batchId: {}, frames: {}",
                 userId, batchId, frames.size());
+
+        // 프레임 배치 자체가 null이거나 비어있는지 확인
+        if (frames == null || frames.isEmpty()) {
+            log.error("AI 서버로 전송할 프레임 배치가 비어 있습니다: userId={}, batchId={}", userId, batchId);
+            // 여기서는 처리하지 않고 로그만 남김
+        } else {
+            // 각 프레임의 데이터 확인
+            for (int i = 0; i < frames.size(); i++) {
+                VideoDto.FrameData frame = frames.get(i);
+                if (frame == null) {
+                    log.warn("null 프레임 발견: userId={}, batchId={}, frameIndex={}", userId, batchId, i);
+                } else if (frame.getData() == null || frame.getData().length == 0) {
+                    log.warn("빈 프레임 데이터 발견: userId={}, batchId={}, frameIndex={}, dataLength={}",
+                            userId, batchId, i, frame.getData() != null ? frame.getData().length : 0);
+                }
+            }
+        }
 
         // 프로토 형식에 맞게 요청 구성
         List<Frame> protoFrames = frames.stream()

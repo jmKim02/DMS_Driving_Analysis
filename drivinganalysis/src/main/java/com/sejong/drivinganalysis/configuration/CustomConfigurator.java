@@ -11,7 +11,7 @@ import org.springframework.web.socket.server.standard.ServerEndpointRegistration
  * WebSocket 엔드포인트에 Spring 의존성 주입을 가능하게 하는 설정 클래스
  */
 @Component
-public class CustomConfigurator extends ServerEndpointRegistration.Configurator implements ApplicationContextAware {
+public class  CustomConfigurator extends ServerEndpointRegistration.Configurator implements ApplicationContextAware {
 
     private static volatile BeanFactory context;
 
