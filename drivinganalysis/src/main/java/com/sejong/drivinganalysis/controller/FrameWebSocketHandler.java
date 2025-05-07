@@ -137,6 +137,9 @@ public class FrameWebSocketHandler {
 
             VideoDto.FrameProcessedResponse response = videoService.processFrameBatch(request);
 
+            request.getFrames().clear();
+            frames.clear();
+
             // 6. 응답 전송
             String responseJson = objectMapper.writeValueAsString(response);
             sendTextMessage(session, responseJson);
@@ -153,6 +156,8 @@ public class FrameWebSocketHandler {
     @OnClose
     public void onClose(Session session) {
         sessions.remove(session.getId());
+        // 세션 관련 리소스 명시적 정리
+        session.getUserProperties().clear();
         log.info("WebSocket 연결 종료: sessionId={}", session.getId());
     }
 
@@ -195,4 +200,5 @@ public class FrameWebSocketHandler {
             log.warn("오류 메시지 전송 실패: {}", e.getMessage());
         }
     }
+
 }

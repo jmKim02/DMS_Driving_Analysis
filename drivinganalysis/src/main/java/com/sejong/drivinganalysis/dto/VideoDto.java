@@ -96,5 +96,6 @@ public class VideoDto {
         private Long timestamp;
         private Boolean drowsinessDetected;
         private String message;
+        private Integer batchId;
     }
 }

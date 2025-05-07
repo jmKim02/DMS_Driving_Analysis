@@ -20,6 +20,7 @@ public class AlertController {
     @GetMapping(value = "/subscribe/{userId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribeToAlerts(@PathVariable Long userId) {
         log.info("SSE connection request for userId: {}", userId);
+
         return alertService.createAlertConnection(userId);
     }
 

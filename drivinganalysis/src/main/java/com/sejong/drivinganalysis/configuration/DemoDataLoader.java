@@ -130,12 +130,12 @@ public class DemoDataLoader implements CommandLineRunner {
     private void createDailyData(User user, LocalDate date) {
         log.info("Creating demo data for date {}", date);
 
-        // 첫 번째 세션 (오전 8시 ~ 10시 사이)
-        LocalDateTime morningSession = date.atTime(8 + random.nextInt(3), random.nextInt(60));
+        // 첫 번째 세션 (오전 8시 ~ 12시 사이)
+        LocalDateTime morningSession = date.atTime(8 + random.nextInt(5), random.nextInt(60));
         createSession(user, morningSession);
 
-        // 두 번째 세션 (저녁 17시 ~ 20시 사이)
-        LocalDateTime eveningSession = date.atTime(17 + random.nextInt(4), random.nextInt(60));
+        // 두 번째 세션 (저녁 17시 ~ 22시 사이)
+        LocalDateTime eveningSession = date.atTime(17 + random.nextInt(6), random.nextInt(60));
         createSession(user, eveningSession);
     }
 

@@ -17,6 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
@@ -41,81 +46,95 @@ public class VideoService {
     private final Map<Long, Long> userSessionStartTimes = new ConcurrentHashMap<>();
     private final Map<Long, Long> userLastFrameTimestamps = new ConcurrentHashMap<>();
 
+    // 디버그용 필드 추가
+    private static final String DEBUG_FRAME_DIR = "/tmp/frame_debug";
+    private static final int MAX_DEBUG_FRAMES = 15; // 디버그용으로 최대 5개 프레임만 저장
+
     /**
      * WebSocket을 통해 수신된 프레임 배치를 처리하고 AI 분석 요청을 보냄
      * 메모리에서 즉시 처리하고 실시간 알림만 처리
      */
     public VideoDto.FrameProcessedResponse processFrameBatch(VideoDto.FrameBatchRequest frameBatch) {
         try {
+            // 입력 검증
+            if (frameBatch == null) {
+                throw new ApiException("INVALID_REQUEST", "Frame batch request is null");
+            }
+
+            if (frameBatch.getUserId() == null) {
+                throw new ApiException("INVALID_REQUEST", "Missing required parameter: userId");
+            }
+
             // 사용자 존재 확인
             User user = userRepository.findById(frameBatch.getUserId())
                     .orElseThrow(() -> new ApiException("USER_NOT_FOUND", "User not found: " + frameBatch.getUserId()));
 
-            log.info("Processing frame batch for user: {}, batchId: {}, frames count: {}",
-                    user.getUsername(), frameBatch.getBatchId(), frameBatch.getFrames().size());
+            // 디버그용 프레임 저장 - 몇 개의 배치만 확인
+            if (frameBatch.getBatchId() < 3) { // 처음 몇 개 배치만 디버그
+                saveFramesForDebug(frameBatch, user.getUserId());
+            }
+
+            // 프레임 유효성 검증
+            List<VideoDto.FrameData> validFrames = validateFrames(frameBatch, user);
+
+            log.info("Processing frame batch for user: {}, batchId: {}, valid frames count: {}/{}",
+                    user.getUsername(), frameBatch.getBatchId(), validFrames.size(),
+                    frameBatch.getFrames() != null ? frameBatch.getFrames().size() : 0);
 
             // 세션 시작 시간 기록 (첫 프레임인 경우)
-            if (frameBatch.getBatchId() == 0 || !userSessionStartTimes.containsKey(user.getUserId())) {
-                userSessionStartTimes.put(user.getUserId(), frameBatch.getTimestamp());
-                log.info("New driving session started for userId: {}", user.getUserId());
+            synchronized(userSessionStartTimes) {
+                if (frameBatch.getBatchId() == 0 || !userSessionStartTimes.containsKey(user.getUserId())) {
+                    userSessionStartTimes.put(user.getUserId(), frameBatch.getTimestamp());
+                    log.info("New driving session started for userId: {}", user.getUserId());
+                }
             }
 
             // 마지막 프레임 타임스탬프 업데이트
-            userLastFrameTimestamps.put(user.getUserId(), frameBatch.getTimestamp());
-
-            // 프레임 데이터 검증 로그 추가
-            boolean hasEmptyFrames = false;
-            boolean hasInvalidFrames = false;
-            int emptyFrameCount = 0;
-
-            for (int i = 0; i < frameBatch.getFrames().size(); i++) {
-                VideoDto.FrameData frame = frameBatch.getFrames().get(i);
-                if (frame.getData() == null || frame.getData().length == 0) {
-                    hasEmptyFrames = true;
-                    emptyFrameCount++;
-                    log.warn("Empty frame detected in batch - userId: {}, batchId: {}, frameIndex: {}, frameId: {}",
-                            user.getUserId(), frameBatch.getBatchId(), i, frame.getFrameId());
-                } else if (frame.getData().length < 100) { // 최소 프레임 크기 검증 (예: 100바이트 미만인 경우)
-                    hasInvalidFrames = true;
-                    log.warn("Suspiciously small frame detected - userId: {}, batchId: {}, frameIndex: {}, frameId: {}, size: {} bytes",
-                            user.getUserId(), frameBatch.getBatchId(), i, frame.getFrameId(), frame.getData().length);
-                }
-            }
-
-            if (hasEmptyFrames || hasInvalidFrames) {
-                log.warn("Frame quality issues detected - userId: {}, batchId: {}, emptyFrames: {}, totalFrames: {}",
-                        user.getUserId(), frameBatch.getBatchId(), emptyFrameCount, frameBatch.getFrames().size());
+            synchronized(userLastFrameTimestamps) {
+                userLastFrameTimestamps.put(user.getUserId(), frameBatch.getTimestamp());
             }
 
             // 비동기로 AI 분석 요청 - 실시간 졸음 감지를 위한 간소화된 분석
-            CompletableFuture.runAsync(() -> {
-                try {
-                    RealtimeAnalysisResponse response = grpcClientService.analyzeFrames(
-                            user.getUserId(),
-                            frameBatch.getBatchId(),
-                            frameBatch.getTimestamp(),
-                            frameBatch.getFrames()
-                    );
+            if (!validFrames.isEmpty()) {
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        // 유효한 프레임만 복사하여 새로운 리스트 생성 (원본 데이터 변경 방지)
+                        final List<VideoDto.FrameData> framesCopy = new ArrayList<>(validFrames);
 
-                    // 분석 실패 시 로깅만 처리
-                    if (!response.getAnalysisCompleted() && response.getErrorMessage() != null) {
-                        log.warn("Frame analysis incomplete for userId: {}, error: {}",
-                                user.getUserId(), response.getErrorMessage());
-                        return;
-                    }
+                        RealtimeAnalysisResponse response = grpcClientService.analyzeFrames(
+                                user.getUserId(),
+                                frameBatch.getBatchId(),
+                                frameBatch.getTimestamp(),
+                                framesCopy
+                        );
 
-                    // 졸음 감지 시에만 알림 전송
-                    if (response.getDrowsinessDetected()) {
-                        log.info("Drowsiness detected for userId: {}, sending alert", user.getUserId());
-                        alertService.sendDrowsinessAlert(user.getUserId(), true);
+                        // 메모리 관리: 복사본 사용 후 해제 (필요시)
+                        framesCopy.clear();
+
+                        // 분석 실패 시 로깅만 처리
+                        if (!response.getAnalysisCompleted() && response.getErrorMessage() != null) {
+                            log.warn("Frame analysis incomplete for userId: {}, error: {}",
+                                    user.getUserId(), response.getErrorMessage());
+                            return;
+                        }
+
+                        // VideoService.java 파일 내의 코드 수정
+// 졸음 감지 시에만 알림 전송
+                        if (response.getDrowsinessDetected()) {
+                            log.info("Drowsiness detected for userId: {}, batchId: {}", user.getUserId(), frameBatch.getBatchId());
+                            alertService.sendDrowsinessAlert(user.getUserId(), true, frameBatch.getBatchId()); // batchId 추가
+                        }
+                    } catch (Exception e) {
+                        log.error("Error in async frame analysis for userId: {}", user.getUserId(), e);
                     }
-                } catch (Exception e) {
-                    log.error("Error in async frame analysis for userId: {}", user.getUserId(), e);
-                }
-            }).exceptionally(ex -> {
-                log.error("Uncaught exception in frame analysis for userId: {}", user.getUserId(), ex);
-                return null;
-            });
+                }).exceptionally(ex -> {
+                    log.error("Uncaught exception in frame analysis for userId: {}", user.getUserId(), ex);
+                    return null;
+                });
+            } else {
+                log.warn("프레임 분석 건너뜀: 유효한 프레임이 없음 - userId: {}, batchId: {}",
+                        user.getUserId(), frameBatch.getBatchId());
+            }
 
             // 응답 반환
             return VideoDto.FrameProcessedResponse.builder()
@@ -125,9 +144,127 @@ public class VideoService {
                     .processed(true)
                     .build();
 
+        } catch (ApiException e) {
+            log.error("API 오류: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
-            log.error("Error processing frame batch", e);
+            log.error("프레임 배치 처리 중 예상치 못한 오류", e);
             throw new ApiException("FRAME_PROCESSING_ERROR", "Failed to process frame batch: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 프레임 배치의 유효성을 검증하고 유효한 프레임만 반환
+     */
+    private List<VideoDto.FrameData> validateFrames(VideoDto.FrameBatchRequest frameBatch, User user) {
+        List<VideoDto.FrameData> frames = frameBatch.getFrames();
+
+        // 프레임 배치가 null이거나 비어있는 경우
+        if (frames == null || frames.isEmpty()) {
+            log.warn("빈 프레임 배치 - userId: {}, batchId: {}",
+                    user.getUserId(), frameBatch.getBatchId());
+            return new ArrayList<>();
+        }
+
+        // 유효한 프레임만 필터링
+        List<VideoDto.FrameData> validFrames = new ArrayList<>();
+        int nullFrames = 0;
+        int emptyDataFrames = 0;
+        int smallFrames = 0;
+
+        for (int i = 0; i < frames.size(); i++) {
+            VideoDto.FrameData frame = frames.get(i);
+
+            if (frame == null) {
+                nullFrames++;
+                continue;
+            }
+
+            if (frame.getData() == null || frame.getData().length == 0) {
+                emptyDataFrames++;
+                log.warn("빈 프레임 데이터 - userId: {}, batchId: {}, frameIndex: {}, frameId: {}",
+                        user.getUserId(), frameBatch.getBatchId(), i, frame.getFrameId());
+                continue;
+            }
+
+            // 의심스러운 작은 프레임 크기 로깅 (하지만 처리는 진행)
+            if (frame.getData().length < 100) {
+                smallFrames++;
+                log.warn("의심스러운 작은 프레임 크기 - userId: {}, batchId: {}, frameIndex: {}, size: {} bytes",
+                        user.getUserId(), frameBatch.getBatchId(), i, frame.getData().length);
+            }
+
+            validFrames.add(frame);
+        }
+
+        // 검증 결과 로깅
+        if (nullFrames > 0 || emptyDataFrames > 0 || smallFrames > 0) {
+            log.warn("프레임 검증 결과 - userId: {}, batchId: {}, 총 프레임: {}, null 프레임: {}, 빈 데이터 프레임: {}, 작은 프레임: {}, 유효한 프레임: {}",
+                    user.getUserId(), frameBatch.getBatchId(), frames.size(), nullFrames, emptyDataFrames, smallFrames, validFrames.size());
+        }
+
+        return validFrames;
+    }
+
+    /**
+     * 디버그용 프레임 저장 메소드
+     */
+    private void saveFramesForDebug(VideoDto.FrameBatchRequest frameBatch, Long userId) {
+        try {
+            // 디렉토리 생성
+            File debugDir = new File(DEBUG_FRAME_DIR);
+            if (!debugDir.exists()) {
+                debugDir.mkdirs();
+            }
+
+            // 사용자별 디렉토리
+            File userDir = new File(debugDir, "user_" + userId);
+            if (!userDir.exists()) {
+                userDir.mkdirs();
+            }
+
+            // 배치별 디렉토리
+            File batchDir = new File(userDir, "batch_" + frameBatch.getBatchId());
+            if (!batchDir.exists()) {
+                batchDir.mkdirs();
+            }
+
+            // 프레임 정보 저장
+            File infoFile = new File(batchDir, "info.txt");
+            try (FileWriter writer = new FileWriter(infoFile)) {
+                writer.write("BatchId: " + frameBatch.getBatchId() + "\n");
+                writer.write("Timestamp: " + frameBatch.getTimestamp() + "\n");
+                writer.write("Total Frames: " + (frameBatch.getFrames() != null ? frameBatch.getFrames().size() : 0) + "\n");
+            }
+
+            // 몇 개의 프레임만 저장 (용량 제한)
+            if (frameBatch.getFrames() != null) {
+                int count = 0;
+                for (VideoDto.FrameData frame : frameBatch.getFrames()) {
+                    if (frame != null && frame.getData() != null && frame.getData().length > 0) {
+                        // 프레임 이미지 저장
+                        File frameFile = new File(batchDir, "frame_" + count + ".jpg");
+                        try (FileOutputStream fos = new FileOutputStream(frameFile)) {
+                            fos.write(frame.getData());
+                        }
+
+                        // 프레임 메타데이터 저장
+                        File frameInfoFile = new File(batchDir, "frame_" + count + "_info.txt");
+                        try (FileWriter writer = new FileWriter(frameInfoFile)) {
+                            writer.write("FrameId: " + frame.getFrameId() + "\n");
+                            writer.write("Data Length: " + frame.getData().length + " bytes\n");
+                        }
+
+                        count++;
+                        if (count >= MAX_DEBUG_FRAMES) break; // 최대 5개만 저장
+                    }
+                }
+                log.info("디버그용 프레임 {} 개 저장 완료: userId={}, batchId={}, 경로={}",
+                        count, userId, frameBatch.getBatchId(), batchDir.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            log.error("디버그용 프레임 저장 중 오류: {}", e.getMessage(), e);
+            // 디버그 코드이므로 예외 처리 후 계속 진행
         }
     }
 
@@ -138,12 +275,30 @@ public class VideoService {
     @Transactional
     public VideoDto.DrivingSessionEndResponse endDrivingSession(VideoDto.DrivingSessionEndRequest request) {
         try {
+            // 입력 검증
+            if (request == null) {
+                throw new ApiException("INVALID_REQUEST", "Session end request is null");
+            }
+
+            if (request.getUserId() == null || request.getSessionId() == null) {
+                throw new ApiException("INVALID_REQUEST", "Missing required parameters: userId or sessionId");
+            }
+
+            // 사용자 존재 확인
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new ApiException("USER_NOT_FOUND", "User not found: " + request.getUserId()));
 
             // 세션 시작 타임스탬프 및 마지막 프레임 타임스탬프 확인
-            Long startTimestamp = userSessionStartTimes.getOrDefault(request.getUserId(), 0L);
-            Long lastFrameTimestamp = userLastFrameTimestamps.getOrDefault(request.getUserId(), startTimestamp);
+            Long startTimestamp;
+            Long lastFrameTimestamp;
+
+            synchronized(userSessionStartTimes) {
+                startTimestamp = userSessionStartTimes.getOrDefault(request.getUserId(), 0L);
+            }
+
+            synchronized(userLastFrameTimestamps) {
+                lastFrameTimestamp = userLastFrameTimestamps.getOrDefault(request.getUserId(), startTimestamp);
+            }
 
             log.info("Ending driving session for user: {}, sessionId: {}", user.getUsername(), request.getSessionId());
 
@@ -152,24 +307,37 @@ public class VideoService {
                     user.getUserId(),
                     request.getSessionId(),
                     startTimestamp,
-                    request.getEndTimestamp()
+                    request.getEndTimestamp() != null ? request.getEndTimestamp() : System.currentTimeMillis()
             );
 
             // 세션 정보 정리
-            userSessionStartTimes.remove(request.getUserId());
-            userLastFrameTimestamps.remove(request.getUserId());
+            synchronized(userSessionStartTimes) {
+                userSessionStartTimes.remove(request.getUserId());
+            }
+
+            synchronized(userLastFrameTimestamps) {
+                userLastFrameTimestamps.remove(request.getUserId());
+            }
 
             // SSE 연결 제거
-            alertService.removeConnection(request.getUserId());
+            try {
+                alertService.removeConnection(request.getUserId());
+            } catch (Exception e) {
+                log.warn("SSE 연결 제거 중 오류: {}", e.getMessage());
+                // 연결 제거 실패해도 계속 진행
+            }
 
-            // 분석 실패 시 오류 응답
-            if (!finalAnalysis.getAnalysisCompleted()) {
-                throw new ApiException("ANALYSIS_FAILED",
-                        "Failed to analyze driving session: " + finalAnalysis.getErrorMessage());
+            // 분석 실패 시 기본 분석 결과 생성
+            if (!finalAnalysis.getAnalysisCompleted() && finalAnalysis.getErrorMessage() != null) {
+                log.warn("주행 분석 불완전 - userId: {}, error: {}",
+                        user.getUserId(), finalAnalysis.getErrorMessage());
+                // 기본 0값으로 계속 진행 (실패해도 기록은 남김)
             }
 
             // 주행 영상 레코드 생성
-            int durationSeconds = (int)((request.getEndTimestamp() - startTimestamp) / 1000);
+            int durationSeconds = (int)((lastFrameTimestamp - startTimestamp) / 1000);
+            durationSeconds = Math.max(1, durationSeconds); // 최소 1초 보장
+
             DrivingVideo video = DrivingVideo.createVideo(
                     user,
                     "session_" + request.getSessionId(),
@@ -195,12 +363,23 @@ public class VideoService {
             log.info("Saved analysis result: {}", result.getResultId());
 
             // 운전 점수 업데이트 추가
-            userScoreService.updateUserScore(user.getUserId(), result);
-            log.info("Updated user score for userId: {}", user.getUserId());
+            try {
+                userScoreService.updateUserScore(user.getUserId(), result);
+                log.info("Updated user score for userId: {}", user.getUserId());
+            } catch (Exception e) {
+                log.error("사용자 점수 업데이트 중 오류: {}", e.getMessage(), e);
+                // 오류가 발생해도 계속 진행
+            }
 
-            // 피드백 생성 (추가된 부분)
-            Feedback feedback = feedbackService.generateDrivingFeedback(result);
-            log.info("Generated driving feedback: {}", feedback.getFeedbackId());
+            // 피드백 생성
+            Feedback feedback = null;
+            try {
+                feedback = feedbackService.generateDrivingFeedback(result);
+                log.info("Generated driving feedback: {}", feedback.getFeedbackId());
+            } catch (Exception e) {
+                log.error("피드백 생성 중 오류: {}", e.getMessage(), e);
+                // 오류가 발생해도 계속 진행
+            }
 
             // 응답 반환
             return VideoDto.DrivingSessionEndResponse.builder()
@@ -214,10 +393,10 @@ public class VideoService {
                     .build();
 
         } catch (ApiException e) {
-            log.error("API error ending driving session", e);
+            log.error("API 오류: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("Error ending driving session", e);
+            log.error("주행 세션 종료 중 예상치 못한 오류", e);
             throw new ApiException("SESSION_END_ERROR", "Failed to end driving session: " + e.getMessage());
         }
     }
