@@ -39,6 +39,7 @@ public class AlertService {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
+    // testMessage
     /**
      * 생성자: 연결 유지를 위한 핑 이벤트 스케줄링
      */
@@ -308,7 +309,7 @@ public class AlertService {
 
         if (emitter != null) {
             try {
-                VideoDto.DrowsinessAlert alert = VideoDto.DrowsinessAlert.builder()
+                VideoDto.DrowsinessAlert alert = VideoDto.DrowsinessAlert.builder() 
                         .userId(userId)
                         .timestamp(System.currentTimeMillis())
                         .drowsinessDetected(drowsinessDetected)
