@@ -28,6 +28,7 @@ public class UserScoreService {
     private final UserRepository userRepository;
     private final AnalysisResultRepository analysisResultRepository;
 
+
     /**
      * 분석 결과를 반영하여 사용자 점수 업데이트
      */
@@ -130,6 +131,8 @@ public class UserScoreService {
      * 통합된 사용자 점수 조회 메서드
      * 파라미터 조합에 따라 다른 형태의 점수 데이터 반환
      */
+
+
     @Transactional(readOnly = true)
     public ScoreDto.ScoreResponse getUserScores(Long userId, String period,
                                                 Integer year, Integer month, Integer week,
@@ -192,11 +195,35 @@ public class UserScoreService {
         // 평균 점수 계산
         double averageScore = calculateAverageScore(scoreDataList);
 
+        // 위험행동 누적 통계 계산 (AnalysisResult 기준)
+        LocalDate analysisStart = scores.isEmpty() ? LocalDate.now().minusDays(6) : scores.get(scores.size() - 1).getScoreDate();
+        LocalDate analysisEnd = scores.isEmpty() ? LocalDate.now() : scores.get(0).getScoreDate();
+
+        List<AnalysisResult> analysisResults = analysisResultRepository.findByUserUserIdAndAnalyzedAtBetween(
+                userId,
+                analysisStart.atStartOfDay(),
+                analysisEnd.plusDays(1).atStartOfDay()
+        );
+
+        long smokingCount = analysisResults.stream()
+                .mapToLong(r -> Optional.ofNullable(r.getSmokingCount()).orElse(0))
+                .sum();
+        long drowsinessCount = analysisResults.stream()
+                .mapToLong(r -> Optional.ofNullable(r.getDrowsinessCount()).orElse(0))
+                .sum();
+        long phoneUsageCount = analysisResults.stream()
+                .mapToLong(r -> Optional.ofNullable(r.getPhoneUsageCount()).orElse(0))
+                .sum();
+
         return ScoreDto.ScoreResponse.builder()
                 .userId(userId)
                 .scores(scoreDataList)
                 .averageScore((int) Math.round(averageScore))
+                .smokingCount(smokingCount)
+                .drowsinessCount(drowsinessCount)
+                .phoneUsageCount(phoneUsageCount)
                 .build();
+
     }
 
     /**

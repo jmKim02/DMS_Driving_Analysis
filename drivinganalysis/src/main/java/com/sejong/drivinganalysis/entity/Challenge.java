@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 
@@ -17,8 +18,8 @@ import java.time.LocalDate;
                 columnNames = {"title", "start_date", "end_date"}
         )
 )
-
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Challenge extends BaseTimeEntity {
 
@@ -36,7 +37,11 @@ public class Challenge extends BaseTimeEntity {
     private Long targetValue;
 
     @Column(name = "target_metric", nullable = false)
-    private String targetMetric; //추가
+    private String targetMetric;
+
+    /** 새로 추가된 비교 연산자 필드 */
+    @Column(nullable = false)
+    private String comparator;  // ex: ">=", "<="
 
     @Enumerated(EnumType.STRING)
     @Column(name = "challenge_type", nullable = false)
@@ -55,16 +60,33 @@ public class Challenge extends BaseTimeEntity {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    // 생성 메서드
-    public static Challenge createChallenge(String title, String description, Long targetValue,
-                                            String targetMetric,
-                                            ChallengeType challengeType, ChallengeCategory category,
-                                            String rewardInfo, LocalDate startDate, LocalDate endDate) {
+
+    // alias getter for convenience
+    public Long getId() {
+        return this.challengeId;
+    }
+
+    /**
+     * 생성 메서드에도 comparator 매개변수 추가
+     */
+    public static Challenge createChallenge(
+            String title,
+            String description,
+            Long targetValue,
+            String targetMetric,
+            String comparator,
+            ChallengeType challengeType,
+            ChallengeCategory category,
+            String rewardInfo,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
         Challenge challenge = new Challenge();
         challenge.title = title;
         challenge.description = description;
         challenge.targetValue = targetValue;
         challenge.targetMetric = targetMetric;
+        challenge.comparator = comparator;
         challenge.challengeType = challengeType;
         challenge.category = category;
         challenge.rewardInfo = rewardInfo;
@@ -73,4 +95,3 @@ public class Challenge extends BaseTimeEntity {
         return challenge;
     }
 }
-
