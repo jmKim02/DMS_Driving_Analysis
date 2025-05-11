@@ -1,5 +1,6 @@
 package com.sejong.drivinganalysis.service;
 
+import com.sejong.drivinganalysis.challenge.evaluator.ChallengeProgressUpdater;
 import com.sejong.drivinganalysis.dto.VideoDto;
 import com.sejong.drivinganalysis.entity.AnalysisResult;
 import com.sejong.drivinganalysis.entity.DrivingVideo;
@@ -41,6 +42,7 @@ public class VideoService {
     private final AlertService alertService;
     private final UserScoreService userScoreService;
     private final FeedbackService feedbackService;
+    private final ChallengeProgressUpdater challengeProgressUpdater;
 
     // 세션별 시작 타임스탬프와 마지막 프레임 타임스탬프 관리
     private final Map<Long, Long> userSessionStartTimes = new ConcurrentHashMap<>();
@@ -379,6 +381,14 @@ public class VideoService {
             } catch (Exception e) {
                 log.error("피드백 생성 중 오류: {}", e.getMessage(), e);
                 // 오류가 발생해도 계속 진행
+            }
+
+            // 챌린지 진행 업데이트 추가
+            try {
+                challengeProgressUpdater.updateFrom(result);
+                log.info("챌린지 진행도 업데이트 완료 - userId: {}", user.getUserId());
+            } catch (Exception e) {
+                log.error("챌린지 진행도 업데이트 중 오류 발생 - userId: {}, 오류: {}", user.getUserId(), e.getMessage());
             }
 
             // 응답 반환

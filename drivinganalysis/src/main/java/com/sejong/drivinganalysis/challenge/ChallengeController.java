@@ -1,17 +1,13 @@
 package com.sejong.drivinganalysis.challenge;
-
-import com.sejong.drivinganalysis.dto.common.ApiResponse;
+import com.sejong.drivinganalysis.challenge.ChallengeService;
 import com.sejong.drivinganalysis.challenge.dto.ChallengeCreateRequest;
-import com.sejong.drivinganalysis.challenge.dto.ChallengeResponse;
-import com.sejong.drivinganalysis.challenge.dto.UserChallengeResponse;
+import com.sejong.drivinganalysis.entity.Challenge;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -22,72 +18,52 @@ public class ChallengeController {
     private final ChallengeService challengeService;
 
     /**
-     * 1. [관리자] 챌린지 생성
-     *    - 201 Created
-     *    - Location: /api/challenges/{id}
+     * 공통 챌린지 생성
      */
     @PostMapping
-    public ResponseEntity<ApiResponse<Long>> createChallenge(
-            @RequestBody @Valid ChallengeCreateRequest request
-    ) {
-        Long challengeId = challengeService.createChallenge(request);
-        // ApiResponse.success 에 Long(id) 를 담아서 보냄
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.success(challengeId));
+    public ResponseEntity<Challenge> createChallenge(
+            @RequestBody @Valid ChallengeCreateRequest request) {
+        Challenge created = challengeService.createChallenge(request);
+        return ResponseEntity.ok(created);
     }
 
     /**
-     * 2. [유저] 전체 챌린지 조회 (키워드 검색 optional)
-     *
+     * 전체 챌린지 조회
      */
     @GetMapping
-    public ResponseEntity<List<ChallengeResponse>> getAllChallenges(
-            @RequestParam(required = false) String keyword
-    ) {
-        List<ChallengeResponse> list = (keyword != null && !keyword.isBlank())
-                ? challengeService.searchChallengesByKeyword(keyword)
-                : challengeService.getAllChallenges();
+    public ResponseEntity<List<Challenge>> getAllChallenges() {
+        List<Challenge> list = challengeService.getAllChallenges();
         return ResponseEntity.ok(list);
     }
 
     /**
-     * 3. [유저] 챌린지 단건 조회
-     *    - GET /api/challenges/{challengeId}
+     * 오늘 기준 진행중인 챌린지 조회
      */
-    @GetMapping("/{challengeId}")
-    public ResponseEntity<ChallengeResponse> getChallengeById(
-            @PathVariable Long challengeId
-    ) {
-        ChallengeResponse dto = challengeService.getChallengeById(challengeId);
-        return ResponseEntity.ok(dto);
+    @GetMapping("/active")
+    public ResponseEntity<List<Challenge>> getActiveChallenges() {
+        List<Challenge> active = challengeService.getActiveChallenges(LocalDate.now());
+        return ResponseEntity.ok(active);
     }
 
     /**
-     * 4. [유저] 특정 챌린지 참여
-     *    - 이미 참여한 경우 409 Conflict
+     * 단일 챌린지 조회
      */
-    @PostMapping("/{challengeId}/join")
-    public ResponseEntity<ApiResponse<Void>> joinChallenge(
-            @PathVariable Long challengeId,
-            @RequestParam Long userId
-    ) {
-        challengeService.joinChallenge(challengeId, userId);
-        // 제네릭 타입 힌트 <Void> 를 넣어줍니다
-        return ResponseEntity
-                .ok(ApiResponse.<Void>success(null));
+    @GetMapping("/{id}")
+    public ResponseEntity<Challenge> getChallenge(@PathVariable Long id) {
+        Challenge challenge = challengeService.getChallenge(id);
+        return ResponseEntity.ok(challenge);
     }
-
 
     /**
-     * 5. [유저] 내 참여중 챌린지 조회
-     *    - GET /api/challenges/my?userId=...
+     * 챌린지 삭제
      */
-    @GetMapping("/my")
-    public ResponseEntity<List<UserChallengeResponse>> getMyChallenges(
-            @RequestParam Long userId
-    ) {
-        List<UserChallengeResponse> myList = challengeService.getMyChallenges(userId);
-        return ResponseEntity.ok(myList);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteChallenge(@PathVariable Long id) {
+        challengeService.deleteChallenge(id);
+        return ResponseEntity.noContent().build();
     }
+
+
 }
+
+
