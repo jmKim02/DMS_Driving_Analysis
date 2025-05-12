@@ -10,9 +10,10 @@ spring:
     password: ehrekf1!
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  jpa:
+    jpa:
     hibernate:
-      ddl-auto: update  # 테스트용
+      ddl-auto: update # 테스트용
+
     properties:
       hibernate:
         format_sql: true
