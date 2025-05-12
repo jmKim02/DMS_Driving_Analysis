@@ -8,7 +8,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create  # 테스트용
+      ddl-auto: create # 테스트용
     properties:
       hibernate:
         format_sql: true

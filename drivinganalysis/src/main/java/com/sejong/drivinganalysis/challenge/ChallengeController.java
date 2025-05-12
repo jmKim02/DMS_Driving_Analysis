@@ -1,6 +1,7 @@
 package com.sejong.drivinganalysis.challenge;
 import com.sejong.drivinganalysis.challenge.ChallengeService;
 import com.sejong.drivinganalysis.challenge.dto.ChallengeCreateRequest;
+import com.sejong.drivinganalysis.challenge.dto.ChallengeResponse;
 import com.sejong.drivinganalysis.entity.Challenge;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ public class ChallengeController {
     private final ChallengeService challengeService;
 
     /**
-     * 공통 챌린지 생성
+     * [관리자용] 공통 챌린지 생성
      */
     @PostMapping
     public ResponseEntity<Challenge> createChallenge(
@@ -47,15 +48,17 @@ public class ChallengeController {
 
     /**
      * 단일 챌린지 조회
+     * 사용자 입장에선 챌린지 상세보기
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Challenge> getChallenge(@PathVariable Long id) {
+    public ResponseEntity<ChallengeResponse> getChallenge(@PathVariable Long id) {
         Challenge challenge = challengeService.getChallenge(id);
-        return ResponseEntity.ok(challenge);
+        return ResponseEntity.ok(ChallengeResponse.fromEntity(challenge));
     }
 
+
     /**
-     * 챌린지 삭제
+     * [관리자용] 챌린지 삭제
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteChallenge(@PathVariable Long id) {
