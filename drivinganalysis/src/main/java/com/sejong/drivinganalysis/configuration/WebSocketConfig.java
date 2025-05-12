@@ -1,13 +1,13 @@
 package com.sejong.drivinganalysis.configuration;
 
-import com.sejong.drivinganalysis.controller.FrameWebSocketHandler;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 
+/**
+ * WebSocket 관련 설정을 담당하는 Spring 설정 클래스
+ */
 @Configuration
-@Slf4j
 public class WebSocketConfig {
 
     /**

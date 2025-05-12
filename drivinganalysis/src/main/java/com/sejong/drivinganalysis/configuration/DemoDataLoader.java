@@ -1,8 +1,6 @@
 package com.sejong.drivinganalysis.configuration;
 
 import com.sejong.drivinganalysis.entity.*;
-import com.sejong.drivinganalysis.entity.enums.FeedbackType;
-import com.sejong.drivinganalysis.entity.enums.SeverityLevel;
 import com.sejong.drivinganalysis.entity.enums.VideoStatus;
 import com.sejong.drivinganalysis.repository.AnalysisResultRepository;
 import com.sejong.drivinganalysis.repository.DrivingVideoRepository;
@@ -80,15 +78,15 @@ public class DemoDataLoader implements CommandLineRunner {
         User user4 = userRepository.findByUsername("driver4").orElseThrow();
         User user5 = userRepository.findByUsername("driver5").orElseThrow();
 
-        // 1월부터 4월까지 (4개월) 데이터 생성
-        for (int month = 1; month <= 4; month++) {
+        // 3월부터 5월까지 (3개월) 데이터 생성
+        for (int month = 3; month <= 5; month++) {
             createMonthlyData(user1, month);
         }
 
-        createMonthlyData(user2, 4);
-        createMonthlyData(user3, 4);
-        createMonthlyData(user4, 4);
-        createMonthlyData(user5, 4);
+        createMonthlyData(user2, 5);
+        createMonthlyData(user3, 5);
+        createMonthlyData(user4, 5);
+        createMonthlyData(user5, 5);
 
         log.info("Demo driving data created successfully");
     }

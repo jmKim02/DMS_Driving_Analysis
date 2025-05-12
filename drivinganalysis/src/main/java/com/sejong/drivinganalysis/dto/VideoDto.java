@@ -14,7 +14,7 @@ public class VideoDto {
 
     /**
      * 프레임 배치 요청 DTO
-     * 클라이언트에서 전송한 프레임 배치 정보
+     * 클라이언트에서 백엔드 서버로 전송하는 영상 프레임 배치 정보
      */
     @Data
     @Builder
@@ -27,6 +27,9 @@ public class VideoDto {
         private List<FrameData> frames;
     }
 
+    /**
+     * 개별 프레임 데이터 DTO
+     */
     @Data
     @Builder
     @NoArgsConstructor
@@ -38,7 +41,7 @@ public class VideoDto {
 
     /**
      * 프레임 처리 응답 DTO
-     * 서버에서 프레임 처리 후 클라이언트에 응답하는 정보
+     * 백엔드 서버에서 프레임 처리 후 클라이언트에 응답하는 정보
      */
     @Data
     @Builder
@@ -67,7 +70,7 @@ public class VideoDto {
 
     /**
      * 주행 세션 종료 응답 DTO
-     * 서버에서 주행 종료 처리 후 클라이언트에 응답하는 정보
+     * 백엔드 서버에서 주행 종료 처리 후 클라이언트에 응답하는 정보
      */
     @Data
     @Builder
@@ -85,7 +88,7 @@ public class VideoDto {
 
     /**
      * 졸음 감지 알림 DTO
-     * 서버에서 SSE를 통해 클라이언트에 전송하는 졸음 알림 정보
+     * 백엔드 서버에서 SSE를 통해 클라이언트에 전송하는 졸음 알림 정보
      */
     @Data
     @Builder
