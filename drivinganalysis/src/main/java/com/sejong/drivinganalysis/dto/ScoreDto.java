@@ -18,6 +18,11 @@ public class ScoreDto {
         private Long userId;
         private List<ScoreData> scores;
         private Integer averageScore;
+
+        // 아래 세 개는 위험행동 기반 챌린지 생성을 위한 필드 (nullable 가능)
+        private Long smokingCount;
+        private Long drowsinessCount;
+        private Long phoneUsageCount;
     }
 
     @Data

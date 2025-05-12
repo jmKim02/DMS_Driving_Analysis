@@ -1,12 +1,14 @@
 #application.yml
 spring:
   datasource:
-
-
 #    url: jdbc:h2:file:/home/ubuntu/app/data/driving_analysis
 #    username: sa
 #    password:
 #    driver-class-name: org.h2.Driver
+    url: jdbc:mysql://localhost:3306/driving_analysis?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: root
+    password: ehrekf1!
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
@@ -16,6 +18,7 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
 #        dialect: org.hibernate.dialect.H2Dialect  # MySQL이 아닌 H2 방언 사용
+
   servlet:
     multipart:
       max-file-size: 10MB
@@ -31,15 +34,15 @@ jwt:
 
 logging:
   level:
-#    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: DEBUG
     org.springframework.web.socket: DEBUG
     org.springframework.messaging: DEBUG
 
 # AI 서버 연결 설정
 ai:
   server:
-    host: 0.tcp.jp.ngrok.io
-    port: 12608
+    host: localhost
+    port: 5000
     timeout: 30  # 요청 타임아웃(초)
     retry:
       max: 2     # 최대 재시도 횟수

@@ -1,43 +1,47 @@
 package com.sejong.drivinganalysis.challenge;
 
 import com.sejong.drivinganalysis.challenge.dto.ChallengeCreateRequest;
-import com.sejong.drivinganalysis.challenge.dto.ChallengeResponse;
-import com.sejong.drivinganalysis.challenge.dto.UserChallengeResponse;
+import com.sejong.drivinganalysis.entity.Challenge;
 
+import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * 공통 챌린지(CHALLENGE) 관리용 Service 인터페이스
+ */
 public interface ChallengeService {
 
     /**
-     * 관리자용 챌린지 생성
-     * @param request 생성 정보
-     * @return 생성된 챌린지 ID
+     * 새로운 공통 챌린지를 생성합니다.
+     * @param request 챌린지 생성 요청 DTO
+     * @return 생성된 Challenge 엔티티
      */
-    Long createChallenge(ChallengeCreateRequest request);
+    Challenge createChallenge(ChallengeCreateRequest request);
 
     /**
-     * 전체 챌린지 조회
+     * 단일 챌린지를 조회합니다.
+     * @param challengeId 챌린지 ID
+     * @return 조회된 Challenge
      */
-    List<ChallengeResponse> getAllChallenges();
+    Challenge getChallenge(Long challengeId);
 
     /**
-     * 키워드 검색 챌린지 조회
+     * 모든 챌린지를 조회합니다.
+     * @return 모든 Challenge 리스트
      */
-    List<ChallengeResponse> searchChallengesByKeyword(String keyword);
+    List<Challenge> getAllChallenges();
 
     /**
-     * 단건 챌린지 조회
+     * 지정한 날짜에 활성(진행중)인 챌린지 목록을 조회합니다.
+     * @param date 조회 기준 날짜
+     * @return 지정일자 진행중인 챌린지
      */
-    ChallengeResponse getChallengeById(Long challengeId);
+    List<Challenge> getActiveChallenges(LocalDate date);
 
     /**
-     * 챌린지 참여 처리
-     * @return true: 참여 성공 (처음 참여), false: 이미 참여(중복)
+     * 챌린지를 삭제합니다.
+     * @param challengeId 삭제할 챌린지 ID
      */
-    boolean joinChallenge(Long challengeId, Long userId);
-
-    /**
-     * 내가 참여 중인 챌린지 조회
-     */
-    List<UserChallengeResponse> getMyChallenges(Long userId);
+    void deleteChallenge(Long challengeId);
 }
+
