@@ -1,6 +1,7 @@
 package com.sejong.drivinganalysis.service;
 
 import com.sejong.drivinganalysis.dto.VideoDto;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -39,18 +40,36 @@ public class AlertService {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
-    // testMessage
     /**
      * 생성자: 연결 유지를 위한 핑 이벤트 스케줄링
      */
     public AlertService() {
-        // 연결 유지를 위한 핑 이벤트 스케줄링 (30초마다)
-        scheduler.scheduleAtFixedRate(this::sendKeepAliveToAll, 30, 30, TimeUnit.SECONDS);
+        // 연결 유지를 위한 핑 이벤트 스케줄링 (45초마다)
+        scheduler.scheduleAtFixedRate(this::sendKeepAliveToAll, 45, 45, TimeUnit.SECONDS);
 
         // 오래된 연결 정리 (15분마다)
         scheduler.scheduleAtFixedRate(this::cleanupStaleConnections, 15, 15, TimeUnit.MINUTES);
 
-        log.info("AlertService initialized with ping interval=30s, cleanup interval=15m");
+        log.info("AlertService initialized with ping interval=45s, cleanup interval=15m");
+    }
+
+    /**
+     * 애플리케이션 종료 시 스케줄러 자원 해제
+     */
+    @PreDestroy
+    public void shutdown() {
+        try {
+            log.info("Shutting down AlertService scheduler...");
+            scheduler.shutdown();
+            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+                log.warn("Forced shutdown of scheduler after timeout");
+            }
+            log.info("AlertService scheduler shutdown complete");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted during shutdown: {}", e.getMessage());
+        }
     }
 
     /**
@@ -60,7 +79,7 @@ public class AlertService {
     public SseEmitter createAlertConnection(Long userId) {
         // 입력 검증
         if (userId == null || userId <= 0) {
-            log.error("Invalid userId for SSE connection: {}", userId);
+            log.warn("Invalid userId for SSE connection: {}", userId);
             throw new IllegalArgumentException("유효하지 않은 사용자 ID");
         }
 
@@ -103,7 +122,7 @@ public class AlertService {
         });
 
         emitter.onError(e -> {
-            log.error("SSE connection error for userId: {}: {}", userId, e.getMessage());
+            log.warn("SSE connection error for userId: {}: {}", userId, e.getMessage());
             cleanupUser(userId);
         });
 
@@ -125,7 +144,7 @@ public class AlertService {
 
             log.info("SSE connection established for userId: {}", userId);
         } catch (IOException e) {
-            log.error("Error sending initial SSE event: {}", e.getMessage());
+            log.warn("Error sending initial SSE event: {}", e.getMessage());
             emitter.completeWithError(e);
             return emitter; // 실패한 이미터 반환 - 클라이언트 측에서 오류 처리
         }
@@ -169,7 +188,7 @@ public class AlertService {
                     log.warn("Failed to send ping to userId: {}, removing connection: {}", userId, e.getMessage());
                     usersToRemove.add(userId);
                 } catch (Exception e) {
-                    log.error("Unexpected error sending ping to userId: {}: {}", userId, e.getMessage());
+                    log.warn("Unexpected error sending ping to userId: {}: {}", userId, e.getMessage());
                     usersToRemove.add(userId);
                 }
             });
@@ -182,14 +201,8 @@ public class AlertService {
             if (!usersToRemove.isEmpty()) {
                 log.info("Cleaned up {} connections during ping", usersToRemove.size());
             }
-
-            // 주기적으로 연결 상태 로깅 (5회마다 한 번)
-            if (connectionCount % 5 == 0) {
-                log.info("Connection status: active={}, tracking={}, activity={}",
-                        userEmitters.size(), connectionTimes.size(), lastActivityTimes.size());
-            }
         } catch (Exception e) {
-            log.error("Critical error in keep-alive process", e);
+            log.warn("Critical error in keep-alive process: {}", e.getMessage());
         }
     }
 
@@ -234,63 +247,8 @@ public class AlertService {
             if (!usersToRemove.isEmpty()) {
                 log.info("Cleaned up {} stale connections", usersToRemove.size());
             }
-
-            // 데이터 일관성 확인 - 모든 맵의 크기가 일치해야 함
-            if (userEmitters.size() != connectionTimes.size() ||
-                    userEmitters.size() != lastActivityTimes.size()) {
-
-                log.warn("Connection tracking inconsistency detected: emitters={}, connections={}, activity={}",
-                        userEmitters.size(), connectionTimes.size(), lastActivityTimes.size());
-
-                // 일관성 복구 시도
-                syncConnectionTracking();
-            }
         } catch (Exception e) {
-            log.error("Error during stale connection cleanup", e);
-        }
-    }
-
-    /**
-     * 연결 추적 데이터 동기화 - 일관성 복구
-     */
-    private void syncConnectionTracking() {
-        try {
-            log.info("Synchronizing connection tracking data");
-
-            // 활성 연결만 유지
-            Set<Long> activeUserIds = new HashSet<>(userEmitters.keySet());
-
-            // 연결 시간 맵 정리
-            Set<Long> connectionTimeKeys = new HashSet<>(connectionTimes.keySet());
-            for (Long userId : connectionTimeKeys) {
-                if (!activeUserIds.contains(userId)) {
-                    connectionTimes.remove(userId);
-                }
-            }
-
-            // 활동 시간 맵 정리
-            Set<Long> activityTimeKeys = new HashSet<>(lastActivityTimes.keySet());
-            for (Long userId : activityTimeKeys) {
-                if (!activeUserIds.contains(userId)) {
-                    lastActivityTimes.remove(userId);
-                }
-            }
-
-            // 누락된 항목 복구
-            Instant now = Instant.now();
-            for (Long userId : activeUserIds) {
-                if (!connectionTimes.containsKey(userId)) {
-                    connectionTimes.put(userId, now);
-                }
-                if (!lastActivityTimes.containsKey(userId)) {
-                    lastActivityTimes.put(userId, now);
-                }
-            }
-
-            log.info("Connection tracking synchronized: emitters={}, connections={}, activity={}",
-                    userEmitters.size(), connectionTimes.size(), lastActivityTimes.size());
-        } catch (Exception e) {
-            log.error("Error during connection tracking synchronization", e);
+            log.warn("Error during stale connection cleanup: {}", e.getMessage());
         }
     }
 
@@ -298,10 +256,9 @@ public class AlertService {
      * 졸음 감지 알림 전송
      * AI 분석 결과 졸음이 감지된 경우 사용자에게 실시간 알림 전송
      */
-    // AlertService.java 파일 내의 메소드 수정
-    public void sendDrowsinessAlert(Long userId, boolean drowsinessDetected, Integer batchId) { // batchId 매개변수 추가
+    public void sendDrowsinessAlert(Long userId, boolean drowsinessDetected, Integer batchId) {
         if (userId == null) {
-            log.error("Attempted to send alert to null userId");
+            log.warn("Attempted to send alert to null userId");
             return;
         }
 
@@ -309,12 +266,12 @@ public class AlertService {
 
         if (emitter != null) {
             try {
-                VideoDto.DrowsinessAlert alert = VideoDto.DrowsinessAlert.builder() 
+                VideoDto.DrowsinessAlert alert = VideoDto.DrowsinessAlert.builder()
                         .userId(userId)
                         .timestamp(System.currentTimeMillis())
                         .drowsinessDetected(drowsinessDetected)
                         .message("졸음 상태가 감지되었습니다. 안전한 곳에 차량을 정차하고 휴식을 취하세요.")
-                        .batchId(batchId) // 이 필드 추가
+                        .batchId(batchId)
                         .build();
 
                 emitter.send(SseEmitter.event()
@@ -324,9 +281,9 @@ public class AlertService {
                 // 알림 전송 성공 시 마지막 활동 시간 업데이트
                 lastActivityTimes.put(userId, Instant.now());
 
-                log.info("Drowsiness alert sent to userId: {}, batchId: {}", userId, batchId); // 로그 메시지 수정
+                log.info("Drowsiness alert sent to userId: {}, batchId: {}", userId, batchId);
             } catch (IOException e) {
-                log.error("Error sending drowsiness alert to userId: {}, batchId: {}: {}", userId, batchId, e.getMessage());
+                log.warn("Error sending drowsiness alert to userId: {}, batchId: {}: {}", userId, batchId, e.getMessage());
                 cleanupUser(userId);
             }
         } else {
@@ -357,7 +314,6 @@ public class AlertService {
             } catch (Exception e) {
                 log.debug("Error sending close event: {}", e.getMessage());
             } finally {
-                // 어떤 경우에도 반드시 연결 종료 및 관련 데이터 정리
                 cleanupUser(userId);
                 log.info("Removed existing SSE connection for userId: {}", userId);
             }
@@ -372,13 +328,12 @@ public class AlertService {
             // 이미터 가져오기 (제거하지 않고 확인만)
             SseEmitter emitter = userEmitters.get(userId);
 
-            // 모든 추적 데이터 제거 (먼저 제거)
+            // 모든 추적 데이터 제거
             userEmitters.remove(userId);
             connectionTimes.remove(userId);
             lastActivityTimes.remove(userId);
 
             if (emitter != null) {
-                // 이미터가 이미 완료되지 않았다면 완료 처리
                 try {
                     emitter.complete();
                     log.debug("Emitter completed for userId: {}", userId);
@@ -390,32 +345,4 @@ public class AlertService {
             log.warn("Error during user cleanup: {}", e.getMessage());
         }
     }
-
-    /**
-     * 활성 연결 수 반환 (모니터링/디버깅용)
-     */
-    public int getActiveConnectionsCount() {
-        return userEmitters.size();
-    }
-
-    /**
-     * 특정 사용자의 연결 상태 확인
-     */
-    public boolean isConnected(Long userId) {
-        if (userId == null) {
-            return false;
-        }
-        return userEmitters.containsKey(userId) && lastActivityTimes.containsKey(userId);
-    }
-
-    /**
-     * 특정 사용자의 마지막 활동 시간 업데이트 (외부에서 호출 가능)
-     */
-    public void updateUserActivity(Long userId) {
-        if (userId != null && isConnected(userId)) {
-            lastActivityTimes.put(userId, Instant.now());
-            log.debug("Updated activity timestamp for userId: {}", userId);
-        }
-    }
-
 }
