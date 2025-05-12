@@ -1,8 +1,9 @@
 package com.sejong.drivinganalysis.service;
 
 import com.google.protobuf.ByteString;
-import com.sejong.drivinganalysis.dto.VideoDto;
+import com.sejong.drivinganalysis.dto.VideoDto.FrameData;
 import com.sejong.drivinganalysis.grpc.*;
+import com.sejong.drivinganalysis.grpc.VideoAnalysisServiceGrpc.VideoAnalysisServiceBlockingStub;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class GrpcClientService {
 
+    // AI 서버 연결 설정 (application.yml에서 설정 가능)
     @Value("${ai.server.host:localhost}")
     private String aiServerHost;
 
@@ -39,8 +41,9 @@ public class GrpcClientService {
     @Value("${ai.server.retry.max:3}")
     private int maxRetries;
 
+    // gRPC 통신을 위한 채널과 스텁
     private ManagedChannel channel;
-    private VideoAnalysisServiceGrpc.VideoAnalysisServiceBlockingStub blockingStub;
+    private VideoAnalysisServiceBlockingStub blockingStub;
 
     /**
      * gRPC 채널 초기화 및 스텁 생성
@@ -48,11 +51,11 @@ public class GrpcClientService {
     @PostConstruct
     private void init() {
         channel = ManagedChannelBuilder.forAddress(aiServerHost, aiServerPort)
-                .usePlaintext()
-                .keepAliveTime(120, TimeUnit.SECONDS) // 연결 유지 설정
-                .keepAliveTimeout(20, TimeUnit.SECONDS)
-                .keepAliveWithoutCalls(true) // 활성 연결 유지
-                .maxInboundMessageSize(10 * 1024 * 1024) // 10MB로 설정
+                .usePlaintext()                                         // 암호화 없이 평문 통신 (개발용)
+                .keepAliveTime(120, TimeUnit.SECONDS)       // 연결 유지 설정
+                .keepAliveTimeout(20, TimeUnit.SECONDS)  // 연결 유지 타임아웃
+                .keepAliveWithoutCalls(true)                     // 활성 호출 없이도 연결 유지
+                .maxInboundMessageSize(10 * 1024 * 1024)          // 10MB로 설정
                 .build();
         blockingStub = VideoAnalysisServiceGrpc.newBlockingStub(channel);
         log.info("gRPC client initialized, connected to AI server at {}:{}", aiServerHost, aiServerPort);
@@ -62,15 +65,15 @@ public class GrpcClientService {
      * 프레임 배치를 AI 서버로 전송하여 실시간 분석 요청
      * 주로 졸음 감지 여부만 확인하는 간소화된 응답 반환
      */
-    public RealtimeAnalysisResponse analyzeFrames(Long userId, Integer batchId, Long timestamp, List<VideoDto.FrameData> frames) {
+    public RealtimeAnalysisResponse analyzeFrames(Long userId, Integer batchId, Long timestamp, List<FrameData> frames) {
         if (userId == null || batchId == null) {
-            log.error("필수 파라미터가 누락되었습니다: userId={}, batchId={}", userId, batchId);
+            log.warn("필수 파라미터가 누락되었습니다: userId={}, batchId={}", userId, batchId);
             return createRealtimeErrorResponse(userId, "Missing required parameters");
         }
 
         // 프레임 배치 자체가 null이거나 비어있는지 확인
         if (frames == null || frames.isEmpty()) {
-            log.error("AI 서버로 전송할 프레임 배치가 비어 있습니다: userId={}, batchId={}", userId, batchId);
+            log.warn("AI 서버로 전송할 프레임 배치가 비어 있습니다: userId={}, batchId={}", userId, batchId);
             return createRealtimeErrorResponse(userId, "No frames to analyze");
         }
 
@@ -79,20 +82,20 @@ public class GrpcClientService {
 
         try {
             // 유효한 프레임만 필터링 (null, 빈 데이터 제외)
-            List<VideoDto.FrameData> validFrames = frames.stream()
+            List<FrameData> validFrames = frames.stream()
                     .filter(Objects::nonNull)  // null 프레임 필터링
                     .filter(f -> f.getData() != null && f.getData().length > 0)  // 빈 데이터 필터링
                     .collect(Collectors.toList());
 
-            // 유효한 프레임이 충분한지 확인
+            // 유효한 프레임 검증
             if (validFrames.isEmpty()) {
                 log.warn("유효한 프레임이 없습니다: userId={}, batchId={}", userId, batchId);
                 return createRealtimeErrorResponse(userId, "No valid frames to analyze");
             }
 
-            // 프로토 형식에 맞게 변환 (예외 처리 추가)
+            // DTO → Proto 변환 (안전하게 각 프레임별 변환 오류 처리)
             List<Frame> protoFrames = new ArrayList<>();
-            for (VideoDto.FrameData frame : validFrames) {
+            for (FrameData frame : validFrames) {
                 try {
                     Frame protoFrame = Frame.newBuilder()
                             .setData(ByteString.copyFrom(frame.getData()))
@@ -100,19 +103,17 @@ public class GrpcClientService {
                             .build();
                     protoFrames.add(protoFrame);
                 } catch (Exception e) {
-                    log.warn("프레임 변환 중 오류 발생: frameId={}, error={}",
-                            frame.getFrameId(), e.getMessage());
-                    // 변환 실패한 프레임은 건너뜀
+                    log.warn("프레임 변환 중 오류 발생: frameId={}, error={}", frame.getFrameId(), e.getMessage());
                 }
             }
 
-            // 변환된 프레임이 없는 경우 처리
+            // 프로토 객체 유효성 검증
             if (protoFrames.isEmpty()) {
                 log.warn("모든 프레임 변환에 실패했습니다: userId={}, batchId={}", userId, batchId);
                 return createRealtimeErrorResponse(userId, "Failed to convert frames");
             }
 
-            // 요청 객체 생성
+            // gRPC 요청 객체 생성
             FrameBatch request = FrameBatch.newBuilder()
                     .setUserId(userId)
                     .setBatchId(batchId)
@@ -124,8 +125,10 @@ public class GrpcClientService {
             int retries = 0;
             while (retries < maxRetries) {
                 try {
+                    // 타임아웃 설정과 함께 AI 서버 호출
                     RealtimeAnalysisResponse response = blockingStub.withDeadlineAfter(timeout, TimeUnit.SECONDS)
                             .analyzeFrames(request);
+
                     log.info("Received gRPC response from AI server for userId: {}, drowsiness detected: {}",
                             userId, response.getDrowsinessDetected());
                     return response;
@@ -133,7 +136,7 @@ public class GrpcClientService {
                     retries++;
                     Status status = e.getStatus();
 
-                    // 재시도 가능한 오류인지 확인
+                    // 재시도 가능한 오류 (서버 일시적 장애, 타임아웃)인 경우 재시도
                     if (retries < maxRetries &&
                             (status.getCode() == Status.Code.UNAVAILABLE ||
                                     status.getCode() == Status.Code.DEADLINE_EXCEEDED)) {
@@ -144,15 +147,17 @@ public class GrpcClientService {
                             Thread.currentThread().interrupt();
                         }
                     } else {
-                        log.error("gRPC call failed with status: {}", status, e);
+                        // 재시도 불가능한 오류 또는 최대 재시도 횟수 초과
+                        log.warn("gRPC call failed with status: {}", status, e);
                         return createRealtimeErrorResponse(userId, e.getMessage());
                     }
                 }
             }
 
+            // 최대 재시도 횟수 초과
             return createRealtimeErrorResponse(userId, "Max retries exceeded");
         } catch (Exception e) {
-            log.error("프레임 분석 중 예상치 못한 오류: {}", e.getMessage(), e);
+            log.warn("프레임 분석 중 예상치 못한 오류: {}", e.getMessage(), e);
             return createRealtimeErrorResponse(userId, "Unexpected error: " + e.getMessage());
         }
     }
@@ -163,7 +168,7 @@ public class GrpcClientService {
      */
     public FinalAnalysisResponse endDrivingSession(Long userId, Long sessionId, Long startTimestamp, Long endTimestamp) {
         if (userId == null || sessionId == null) {
-            log.error("필수 파라미터가 누락되었습니다: userId={}, sessionId={}", userId, sessionId);
+            log.warn("필수 파라미터가 누락되었습니다: userId={}, sessionId={}", userId, sessionId);
             return createFinalErrorResponse(userId, "Missing required parameters");
         }
 
@@ -171,12 +176,11 @@ public class GrpcClientService {
                 userId, sessionId);
 
         // 타임스탬프 보정 (null인 경우 현재 시간 사용)
-        Long safeStartTimestamp = startTimestamp != null ? startTimestamp :
-                System.currentTimeMillis() - 3600000; // 1시간 전
+        Long safeStartTimestamp = startTimestamp != null ? startTimestamp : System.currentTimeMillis() - 3600000; // 1시간 전
         Long safeEndTimestamp = endTimestamp != null ? endTimestamp : System.currentTimeMillis();
 
         try {
-            // 프로토 정의에 맞게 요청 구성
+            // gRPC 요청 객체 생성
             DrivingSessionEnd request = DrivingSessionEnd.newBuilder()
                     .setUserId(userId)
                     .setSessionId(sessionId)
@@ -184,6 +188,7 @@ public class GrpcClientService {
                     .setEndTimestamp(safeEndTimestamp)
                     .build();
 
+            // 호출 및 재시도 로직 (실시간 분석과 유사)
             int retries = 0;
             while (retries < maxRetries) {
                 try {
@@ -210,7 +215,7 @@ public class GrpcClientService {
                             Thread.currentThread().interrupt();
                         }
                     } else {
-                        log.error("gRPC end session call failed with status: {}", status, e);
+                        log.warn("gRPC end session call failed with status: {}", status, e);
                         return createFinalErrorResponse(userId, e.getMessage());
                     }
                 }
@@ -218,7 +223,7 @@ public class GrpcClientService {
 
             return createFinalErrorResponse(userId, "Max retries exceeded");
         } catch (Exception e) {
-            log.error("주행 세션 종료 중 예상치 못한 오류: {}", e.getMessage(), e);
+            log.warn("주행 세션 종료 중 예상치 못한 오류: {}", e.getMessage(), e);
             return createFinalErrorResponse(userId, "Unexpected error: " + e.getMessage());
         }
     }
@@ -258,6 +263,7 @@ public class GrpcClientService {
             log.info("Shutting down gRPC channel");
             channel.shutdown();
             try {
+                // 5초 내에 정상 종료되지 않으면 강제 종료
                 if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
                     channel.shutdownNow();
                     log.warn("gRPC channel forced shutdown after timeout");

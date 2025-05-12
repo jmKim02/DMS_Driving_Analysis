@@ -1,26 +1,33 @@
 #application.yml
 spring:
   datasource:
+#    url: jdbc:h2:file:/home/ubuntu/app/data/driving_analysis
+#    username: sa
+#    password:
+#    driver-class-name: org.h2.Driver
     url: jdbc:mysql://localhost:3306/driving_analysis?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
     password: ehrekf1!
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  jpa:
+    jpa:
     hibernate:
       ddl-auto: update # 테스트용
+
     properties:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
+#        dialect: org.hibernate.dialect.H2Dialect  # MySQL이 아닌 H2 방언 사용
+
   servlet:
     multipart:
-      max-file-size: 50MB
-      max-request-size: 50MB
+      max-file-size: 10MB
+      max-request-size: 10MB
 
   websocket:
-    max-text-message-size: 50MB
-    max-binary-message-size: 50MB
+    max-text-message-size: 30MB
+    max-binary-message-size: 30MB
 
 jwt:
   secret: yourSecretKeyHereShouldBeLongEnoughToBeSecure
