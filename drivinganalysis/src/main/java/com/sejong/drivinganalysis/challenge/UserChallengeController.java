@@ -41,6 +41,7 @@ public class UserChallengeController {
 
     /**
      * [관리자] 수동으로 개인화 챌린지 생성
+     * 테스터용
      */
     @PostMapping("/internal/create")
     public ResponseEntity<UserChallengeResponse> createCustomChallengeInternal(
@@ -52,6 +53,7 @@ public class UserChallengeController {
 
     /**
      * [사용자] 챌린지 진행도 수동 업데이트
+     * 테스터용
      */
     @PatchMapping("/{ucId}/progress")
     public ResponseEntity<UserChallengeResponse> updateProgress(

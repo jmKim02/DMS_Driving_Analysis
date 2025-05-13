@@ -195,7 +195,7 @@ public class UserChallengeServiceImpl implements UserChallengeService {
                 null, null
         );
 
-        // 1) 주간 점수 향상 챌린지 (기존 그대로)
+        // 1) 주간 점수 향상 챌린지
         Integer avg = resp.getAverageScore();
         if (avg != null && avg > 0) {
             long target = Math.min(avg + 10L, 100L);
@@ -269,7 +269,7 @@ public class UserChallengeServiceImpl implements UserChallengeService {
             } else if (maxValue >= SUSPICIOUS_THRESHOLD) {
                 log.warn("⚠️ 사용자 {}의 {} 수치가 {}회 이상입니다. 의심 계정 가능성.",
                         user.getUserId(), maxMetric, maxValue);
-                // → 여기서 플래그 필드 세팅하거나 별도 처리
+
             }
         }
     }

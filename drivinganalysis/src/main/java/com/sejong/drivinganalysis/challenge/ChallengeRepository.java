@@ -17,5 +17,5 @@ public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
     boolean existsByTitleAndStartDateAndEndDate(String title, LocalDate startDate, LocalDate endDate);
 
     // 주어진 날짜에 활성화된 챌린지 조회
-    List<Challenge> findByStartDateLessThanEqualAndEndDateGreaterThanEqual(LocalDate from, LocalDate to);
+    List<Challenge> findByStartDateLessThanEqualAndEndDateGreaterThanEqual(LocalDate start, LocalDate end);
 }
