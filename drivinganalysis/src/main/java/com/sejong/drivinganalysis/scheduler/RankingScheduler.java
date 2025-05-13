@@ -23,5 +23,6 @@ public class RankingScheduler {
 
         log.info("[스케줄러] 월간 랭킹 자동 업데이트 시작: {}년 {}월", year, month);
         rankingService.calculateAndSaveMonthlyRanking(year, month);
+        log.info("[스케줄러] 월간 랭킹 자동 업데이트 완료");
     }
 }

@@ -2,6 +2,7 @@ package com.sejong.drivinganalysis.configuration;
 
 import com.sejong.drivinganalysis.challenge.UserChallengeService;
 import com.sejong.drivinganalysis.entity.*;
+import com.sejong.drivinganalysis.entity.enums.AnalysisStatus;
 import com.sejong.drivinganalysis.entity.enums.VideoStatus;
 import com.sejong.drivinganalysis.repository.AnalysisResultRepository;
 import com.sejong.drivinganalysis.repository.DrivingVideoRepository;
@@ -62,13 +63,13 @@ public class DemoDataLoader implements CommandLineRunner {
             createDemoData();
         }
 
-        insertMayScores(); // 5월 5일 ~ 9일 사용자 점수 강제 삽입
-
-        // ✅ 사용자별 챌린지 생성 트리거
-        List<User> users = userRepository.findAll();
-        for (User user : users) {
-            userChallengeService.createWeeklyPersonalChallengesForUser(user);
-        }
+//        insertMayScores(); // 5월 5일 ~ 9일 사용자 점수 강제 삽입
+//
+//        // ✅ 사용자별 챌린지 생성 트리거
+//        List<User> users = userRepository.findAll();
+//        for (User user : users) {
+//            userChallengeService.createWeeklyPersonalChallengesForUser(user);
+//        }
     }
 
     private void createDemoUsers() {
@@ -250,74 +251,74 @@ public class DemoDataLoader implements CommandLineRunner {
         log.info("Created demo user: {}", username);
     }
 
-    // ✅ 5월 5일부터 9일까지 driver1 ~ driver5 점수 및 위험행동 데모 데이터 삽입
-    private void insertMayScores() {
-        Map<String, int[]> smokingMap = Map.of(
-                "driver1", new int[]{0, 0, 0, 0, 6},
-                "driver2", new int[]{0, 0, 0, 1, 1},
-                "driver3", new int[]{0, 0, 0, 0, 1},
-                "driver4", new int[]{90, 0, 0, 0, 0},
-                "driver5", new int[]{0, 0, 0, 0, 20}
-        );
-        Map<String, int[]> phoneMap = Map.of(
-                "driver1", new int[]{0, 0, 1, 0, 1},
-                "driver2", new int[]{10, 12, 9, 11, 13},
-                "driver3", new int[]{0, 1, 0, 1, 0},
-                "driver4", new int[]{0, 0, 0, 0, 0},
-                "driver5", new int[]{21, 3, 1, 0, 0}  // 일단 3개 중에 제일 합이 높은 애로만 챌린지 생성
-        );
-        Map<String, int[]> drowsyMap = Map.of(
-                "driver1", new int[]{0, 1, 0, 0, 0},
-                "driver2", new int[]{0, 0, 1, 0, 0},
-                "driver3", new int[]{11, 13, 14, 12, 15},
-                "driver4", new int[]{0, 0, 0, 0, 0},
-                "driver5", new int[]{1, 0, 0, 2, 0}  // 합이 150 이상이면 반영 안 함
-        );
-
-        // driver5 추가!
-        for (String driverName : List.of("driver1", "driver2", "driver3", "driver4", "driver5")) {
-            User user = userRepository.findByUsername(driverName).orElseThrow();
-            for (int i = 0; i < 5; i++) {
-                LocalDate date = LocalDate.of(2025, 5, 5 + i);
-                LocalDateTime sessionTime = date.atTime(9, 0);
-
-                int score   = 80 + i;
-                int smoking = smokingMap.get(driverName)[i];
-                int phone   = phoneMap.get(driverName)[i];
-                int drowsy  = drowsyMap.get(driverName)[i];
-                int duration = 3600;
-
-                // DrivingVideo 생성/저장
-                DrivingVideo video = DrivingVideo.createVideo(user, "may_demo_video_" + driverName + "_" + i, duration);
-                video.setStatus(VideoStatus.ANALYZED);
-                video.setProcessedAt();
-                // (필드 조작 생략)
-                drivingVideoRepository.save(video);
-
-                // AnalysisResult 생성/저장
-                AnalysisResult result = new AnalysisResult();
-                result.setUser(user);
-                result.setVideo(video);
-                result.setDrivingScore(score);
-                result.setSmokingCount(smoking);
-                result.setPhoneUsageCount(phone);
-                result.setDrowsinessCount(drowsy);
-                result.setStatus(AnalysisStatus.COMPLETED);
-                result.setTotalDuration(duration);
-                // analyzedAt 설정
-                try {
-                    Field f = AnalysisResult.class.getDeclaredField("analyzedAt");
-                    f.setAccessible(true);
-                    f.set(result, sessionTime.plusMinutes(5));
-                } catch (Exception ignored) {}
-                analysisResultRepository.save(result);
-
-                // 점수 업데이트
-                userScoreService.updateUserScoreWithCustomDate(user.getUserId(), result, date);
-            }
-        }
-
-        log.info("✅ 5월 사용자 점수 및 위험행동 데모 데이터 삽입 완료");
-    }
+//    // ✅ 5월 5일부터 9일까지 driver1 ~ driver5 점수 및 위험행동 데모 데이터 삽입
+//    private void insertMayScores() {
+//        Map<String, int[]> smokingMap = Map.of(
+//                "driver1", new int[]{0, 0, 0, 0, 6},
+//                "driver2", new int[]{0, 0, 0, 1, 1},
+//                "driver3", new int[]{0, 0, 0, 0, 1},
+//                "driver4", new int[]{90, 0, 0, 0, 0},
+//                "driver5", new int[]{0, 0, 0, 0, 20}
+//        );
+//        Map<String, int[]> phoneMap = Map.of(
+//                "driver1", new int[]{0, 0, 1, 0, 1},
+//                "driver2", new int[]{10, 12, 9, 11, 13},
+//                "driver3", new int[]{0, 1, 0, 1, 0},
+//                "driver4", new int[]{0, 0, 0, 0, 0},
+//                "driver5", new int[]{21, 3, 1, 0, 0}  // 일단 3개 중에 제일 합이 높은 애로만 챌린지 생성
+//        );
+//        Map<String, int[]> drowsyMap = Map.of(
+//                "driver1", new int[]{0, 1, 0, 0, 0},
+//                "driver2", new int[]{0, 0, 1, 0, 0},
+//                "driver3", new int[]{11, 13, 14, 12, 15},
+//                "driver4", new int[]{0, 0, 0, 0, 0},
+//                "driver5", new int[]{1, 0, 0, 2, 0}  // 합이 150 이상이면 반영 안 함
+//        );
+//
+//        // driver5 추가!
+//        for (String driverName : List.of("driver1", "driver2", "driver3", "driver4", "driver5")) {
+//            User user = userRepository.findByUsername(driverName).orElseThrow();
+//            for (int i = 0; i < 5; i++) {
+//                LocalDate date = LocalDate.of(2025, 5, 5 + i);
+//                LocalDateTime sessionTime = date.atTime(9, 0);
+//
+//                int score   = 80 + i;
+//                int smoking = smokingMap.get(driverName)[i];
+//                int phone   = phoneMap.get(driverName)[i];
+//                int drowsy  = drowsyMap.get(driverName)[i];
+//                int duration = 3600;
+//
+//                // DrivingVideo 생성/저장
+//                DrivingVideo video = DrivingVideo.createVideo(user, "may_demo_video_" + driverName + "_" + i, duration);
+//                video.setStatus(VideoStatus.ANALYZED);
+//                video.setProcessedAt();
+//                // (필드 조작 생략)
+//                drivingVideoRepository.save(video);
+//
+//                // AnalysisResult 생성/저장
+//                AnalysisResult result = new AnalysisResult();
+//                result.setUser(user);
+//                result.setVideo(video);
+//                result.setDrivingScore(score);
+//                result.setSmokingCount(smoking);
+//                result.setPhoneUsageCount(phone);
+//                result.setDrowsinessCount(drowsy);
+//                result.setStatus(AnalysisStatus.COMPLETED);
+//                result.setTotalDuration(duration);
+//                // analyzedAt 설정
+//                try {
+//                    Field f = AnalysisResult.class.getDeclaredField("analyzedAt");
+//                    f.setAccessible(true);
+//                    f.set(result, sessionTime.plusMinutes(5));
+//                } catch (Exception ignored) {}
+//                analysisResultRepository.save(result);
+//
+//                // 점수 업데이트
+//                userScoreService.updateUserScoreWithCustomDate(user.getUserId(), result, date);
+//            }
+//        }
+//
+//        log.info("✅ 5월 사용자 점수 및 위험행동 데모 데이터 삽입 완료");
+//    }
 
 }
