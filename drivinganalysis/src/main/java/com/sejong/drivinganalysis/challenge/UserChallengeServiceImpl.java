@@ -131,7 +131,13 @@ public class UserChallengeServiceImpl implements UserChallengeService {
         List<UserChallenge> list = userChallengeRepository
                 .findByUser_UserIdAndTargetMetricAndStatus(userId, targetMetric, ChallengesStatus.IN_PROGRESS);
 
+
         for (UserChallenge uc : list) {
+            if ("driving_score".equals(targetMetric)) {
+                // 운전 점수는 누적하지 않고 평가 시점에 판단함
+                continue;
+            }
+
             long curr = uc.getCurrentValue() != null ? uc.getCurrentValue() : 0L;
             long updated = curr + value;
             uc.setCurrentValue(updated);
@@ -168,9 +174,21 @@ public class UserChallengeServiceImpl implements UserChallengeService {
 
             boolean isDrivingScore = "driving_score".equals(metric);
 
-            // 운전 점수 챌린지는 월요일에만 평가
-            if (isDrivingScore && todayDay != DayOfWeek.MONDAY) {
-                continue;
+            // 운전 점수 챌린지는 월요일에만 평가하고 주간 평균 점수로 판단
+            if (isDrivingScore) {
+                if (todayDay != DayOfWeek.MONDAY) {
+                    continue;
+                }
+
+                ScoreResponse resp = userScoreService.getUserScores(
+                        uc.getUser().getUserId(),
+                        "weekly", null, null, null, null, null
+                );
+
+                Integer avgScore = resp.getAverageScore();
+                if (avgScore == null) continue;
+
+                curr = avgScore; // 주간 평균 점수로 대체
             }
 
             boolean success = switch (cmp) {
@@ -185,6 +203,7 @@ public class UserChallengeServiceImpl implements UserChallengeService {
             }
         }
     }
+
 
     @Override
     @Transactional
