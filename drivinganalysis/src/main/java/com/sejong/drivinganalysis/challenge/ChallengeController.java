@@ -1,5 +1,5 @@
 package com.sejong.drivinganalysis.challenge;
-import com.sejong.drivinganalysis.challenge.ChallengeService;
+
 import com.sejong.drivinganalysis.challenge.dto.ChallengeCreateRequest;
 import com.sejong.drivinganalysis.challenge.dto.ChallengeResponse;
 import com.sejong.drivinganalysis.entity.Challenge;
@@ -29,33 +29,13 @@ public class ChallengeController {
     }
 
     /**
-     * 전체 챌린지 조회
+     * [관리자용] 모든 공통 챌린지 조회 (참여 여부와 관계없이 전부)
      */
     @GetMapping
     public ResponseEntity<List<Challenge>> getAllChallenges() {
         List<Challenge> list = challengeService.getAllChallenges();
         return ResponseEntity.ok(list);
     }
-
-    /**
-     * 오늘 기준 진행중인 챌린지 조회
-     */
-    @GetMapping("/active")
-    public ResponseEntity<List<Challenge>> getActiveChallenges() {
-        List<Challenge> active = challengeService.getActiveChallenges(LocalDate.now());
-        return ResponseEntity.ok(active);
-    }
-
-    /**
-     * 단일 챌린지 조회
-     * 사용자 입장에선 챌린지 상세보기
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<ChallengeResponse> getChallenge(@PathVariable Long id) {
-        Challenge challenge = challengeService.getChallenge(id);
-        return ResponseEntity.ok(ChallengeResponse.fromEntity(challenge));
-    }
-
 
     /**
      * [관리자용] 챌린지 삭제
@@ -66,7 +46,22 @@ public class ChallengeController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * [관리자용] 오늘 기준 진행 중인 챌린지 목록 조회
+     * 조건: startDate <= today && endDate >= today
+     */
+    @GetMapping("/active")
+    public ResponseEntity<List<Challenge>> getActiveChallenges() {
+        List<Challenge> active = challengeService.getActiveChallenges(LocalDate.now());
+        return ResponseEntity.ok(active);
+    }
 
+    /**
+     * [사용자용] 챌린지 상세 조회
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<ChallengeResponse> getChallenge(@PathVariable Long id) {
+        Challenge challenge = challengeService.getChallenge(id);
+        return ResponseEntity.ok(ChallengeResponse.fromEntity(challenge));
+    }
 }
-
-
