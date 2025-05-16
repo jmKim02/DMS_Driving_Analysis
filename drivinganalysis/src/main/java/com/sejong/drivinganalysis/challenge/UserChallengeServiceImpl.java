@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -95,9 +94,9 @@ public class UserChallengeServiceImpl implements UserChallengeService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserChallengeResponse> getUserChallenges(Long userId) {
+    public List<UserChallengeResponse> getUserChallengeResponsesWithDisplayValue(Long userId) {
         return userChallengeRepository.findByUser_UserId(userId).stream()
-                .map(UserChallengeResponse::fromEntity)
+                .map(uc -> UserChallengeResponse.fromEntity(uc, calculateDisplayValue(uc)))
                 .collect(Collectors.toList());
     }
 
@@ -131,10 +130,8 @@ public class UserChallengeServiceImpl implements UserChallengeService {
         List<UserChallenge> list = userChallengeRepository
                 .findByUser_UserIdAndTargetMetricAndStatus(userId, targetMetric, ChallengesStatus.IN_PROGRESS);
 
-
         for (UserChallenge uc : list) {
             if ("driving_score".equals(targetMetric)) {
-                // 운전 점수는 누적하지 않고 평가 시점에 판단함
                 continue;
             }
 
@@ -174,21 +171,16 @@ public class UserChallengeServiceImpl implements UserChallengeService {
 
             boolean isDrivingScore = "driving_score".equals(metric);
 
-            // 운전 점수 챌린지는 월요일에만 평가하고 주간 평균 점수로 판단
             if (isDrivingScore) {
-                if (todayDay != DayOfWeek.MONDAY) {
-                    continue;
-                }
+                if (todayDay != DayOfWeek.MONDAY) continue;
 
                 ScoreResponse resp = userScoreService.getUserScores(
                         uc.getUser().getUserId(),
-                        "weekly", null, null, null, null, null
-                );
+                        "weekly", null, null, null, null, null);
 
                 Integer avgScore = resp.getAverageScore();
                 if (avgScore == null) continue;
-
-                curr = avgScore; // 주간 평균 점수로 대체
+                curr = avgScore;
             }
 
             boolean success = switch (cmp) {
@@ -204,17 +196,12 @@ public class UserChallengeServiceImpl implements UserChallengeService {
         }
     }
 
-
     @Override
     @Transactional
     public void createWeeklyPersonalChallengesForUser(User user) {
         ScoreResponse resp = userScoreService.getUserScores(
-                user.getUserId(),
-                "weekly", null, null, null,
-                null, null
-        );
+                user.getUserId(), "weekly", null, null, null, null, null);
 
-        // 1) 주간 점수 향상 챌린지
         Integer avg = resp.getAverageScore();
         if (avg != null && avg > 0) {
             long target = Math.min(avg + 10L, 100L);
@@ -224,26 +211,17 @@ public class UserChallengeServiceImpl implements UserChallengeService {
             if (!userChallengeRepository.existsByUser_UserIdAndTargetMetricAndStartDate(
                     user.getUserId(), "driving_score", start)) {
                 UserChallenge uc = UserChallenge.createCustom(
-                        user,
-                        "주간 점수 향상 챌린지",
-                        "driving_score",
-                        target,
-                        ">=",
-                        "주간 챔피언",
-                        start,
-                        end
-                );
+                        user, "주간 점수 향상 챌린지", "driving_score", target, ">=",
+                        "이번 주 드라이브 마스터", start, end);
                 userChallengeRepository.save(uc);
             }
         }
 
-        // 2) 위험 행동 기반 개인 챌린지
         Map<String, Long> metrics = new HashMap<>();
         Optional.ofNullable(resp.getSmokingCount()).ifPresent(v -> metrics.put("smoking_count", v));
         Optional.ofNullable(resp.getDrowsinessCount()).ifPresent(v -> metrics.put("drowsiness_count", v));
         Optional.ofNullable(resp.getPhoneUsageCount()).ifPresent(v -> metrics.put("phone_usage_count", v));
 
-        // 가장 큰 값 찾기
         String maxMetric = null;
         long maxValue = -1;
         for (var e : metrics.entrySet()) {
@@ -254,8 +232,8 @@ public class UserChallengeServiceImpl implements UserChallengeService {
         }
 
         if (maxMetric != null) {
-            final int CHALLENGE_THRESHOLD = 10;      // 챌린지 생성 최소 발생 횟수
-            final int SUSPICIOUS_THRESHOLD = 100;    // 의심 계정 플래그 기준
+            final int CHALLENGE_THRESHOLD = 10;
+            final int SUSPICIOUS_THRESHOLD = 100;
 
             if (maxValue >= CHALLENGE_THRESHOLD && maxValue < SUSPICIOUS_THRESHOLD) {
                 long target = maxValue / 2;
@@ -269,29 +247,28 @@ public class UserChallengeServiceImpl implements UserChallengeService {
                         case "smoking_count"     -> "흡연 줄이기 챌린지";
                         case "drowsiness_count"  -> "졸음 줄이기 챌린지";
                         case "phone_usage_count" -> "폰 사용 줄이기 챌린지";
-                        default                  -> "위험 행동 줄이기";
+                        default -> "위험 행동 줄이기";
                     };
 
                     UserChallenge uc = UserChallenge.createCustom(
-                            user,
-                            title,
-                            maxMetric,
-                            target,
-                            "<=",
-                            "개인 맞춤 리워드",
-                            start,
-                            end
-                    );
+                            user, title, maxMetric, target, "<=",
+                            "개인 맞춤 리워드", start, end);
                     userChallengeRepository.save(uc);
                 }
-
             } else if (maxValue >= SUSPICIOUS_THRESHOLD) {
                 log.warn("⚠️ 사용자 {}의 {} 수치가 {}회 이상입니다. 의심 계정 가능성.",
                         user.getUserId(), maxMetric, maxValue);
-
             }
         }
     }
 
-
+    @Override
+    public Long calculateDisplayValue(UserChallenge uc) {
+        if (!"driving_score".equals(uc.getTargetMetric())) {
+            return uc.getCurrentValue();
+        }
+        ScoreResponse resp = userScoreService.getUserScores(
+                uc.getUser().getUserId(), "weekly", null, null, null, null, null);
+        return Optional.ofNullable(resp.getAverageScore()).map(Long::valueOf).orElse(0L);
+    }
 }

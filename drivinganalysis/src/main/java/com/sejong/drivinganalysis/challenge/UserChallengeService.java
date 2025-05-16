@@ -10,26 +10,30 @@ import java.util.List;
 
 public interface UserChallengeService {
 
-
     /**
      * 공통 챌린지 또는 개인화 챌린지 생성/참여 처리
      */
     UserChallenge createUserChallenge(UserChallengeCreateRequest req);
 
     /**
-     * 사용자 챌린지 전체 조회
+     * 사용자 챌린지 전체 조회 (displayValue 포함)
      */
-    List<UserChallengeResponse> getUserChallenges(Long userId);
+    List<UserChallengeResponse> getUserChallengeResponsesWithDisplayValue(Long userId);
 
     /**
      * 개별 챌린지를 ID로 직접 업데이트하는 기능
      */
     UserChallenge updateProgress(Long userChallengeId, Long newValue);
 
+    /**
+     * 공통 챌린지 참여
+     */
     UserChallenge joinCommonChallenge(UserChallengeJoinRequest request);
 
+    /**
+     * 수동 생성 개인화 챌린지 생성
+     */
     UserChallenge createCustomChallenge(UserChallengeCreateRequest request);
-
 
     /**
      * 메트릭 기준으로 진행 중인 챌린지 업데이트
@@ -41,11 +45,13 @@ public interface UserChallengeService {
      */
     void evaluateChallenges();
 
-
     /**
      * 매주 주어진 사용자에 대해 개인화된 챌린지를 자동 생성
-     * (예: 주간 평균 점수 기반 +10점 목표)
      */
     void createWeeklyPersonalChallengesForUser(User user);
 
+    /**
+     * displayValue 계산용
+     */
+    Long calculateDisplayValue(UserChallenge uc);
 }
