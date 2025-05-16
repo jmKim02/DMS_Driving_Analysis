@@ -59,4 +59,10 @@ public interface UserChallengeService {
      * displayValue 계산용
      */
     Long calculateDisplayValue(UserChallenge uc);
+
+    /**
+     * 개별 UserChallenge 상세 조회
+     */
+    UserChallengeResponse getUserChallengeDetail(Long userChallengeId);
+
 }

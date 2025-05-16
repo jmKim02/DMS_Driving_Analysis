@@ -4,6 +4,7 @@ import com.sejong.drivinganalysis.challenge.dto.UserChallengeCreateRequest;
 import com.sejong.drivinganalysis.challenge.dto.UserChallengeJoinRequest;
 import com.sejong.drivinganalysis.challenge.dto.UserChallengeResponse;
 import com.sejong.drivinganalysis.entity.UserChallenge;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.List;
 public class UserChallengeController {
 
     private final UserChallengeService userChallengeService;
+    private final UserChallengeRepository userChallengeRepository;
 
     /**
      * [사용자] 공통 챌린지 참여 (JOIN)
@@ -72,4 +74,17 @@ public class UserChallengeController {
         Long displayValue = userChallengeService.calculateDisplayValue(uc);
         return ResponseEntity.ok(UserChallengeResponse.fromEntity(uc, displayValue));
     }
+
+    /**
+     * [사용자용] 내가 참여한 챌린지 상세 조회
+     */
+    @GetMapping("/detail/{userChallengeId}")
+    public ResponseEntity<UserChallengeResponse> getUserChallengeDetail(
+            @PathVariable Long userChallengeId) {
+        UserChallenge uc = userChallengeRepository.findById(userChallengeId)
+                .orElseThrow(() -> new EntityNotFoundException("UserChallenge가 없습니다. ID=" + userChallengeId));
+        Long displayValue = userChallengeService.calculateDisplayValue(uc);
+        return ResponseEntity.ok(UserChallengeResponse.fromEntity(uc, displayValue));
+    }
+
 }
