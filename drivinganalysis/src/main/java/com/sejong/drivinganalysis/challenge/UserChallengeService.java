@@ -21,6 +21,11 @@ public interface UserChallengeService {
     List<UserChallengeResponse> getUserChallengeResponsesWithDisplayValue(Long userId);
 
     /**
+     * 사용자 현재 참여 가능한 챌린지 조회 (참여 이력 제외)
+     */
+    List<UserChallengeResponse> getAvailableUserChallenges(Long userId);
+
+    /**
      * 개별 챌린지를 ID로 직접 업데이트하는 기능
      */
     UserChallenge updateProgress(Long userChallengeId, Long newValue);

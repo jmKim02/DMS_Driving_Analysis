@@ -1,11 +1,15 @@
 package com.sejong.drivinganalysis.challenge.dto;
 
+import com.sejong.drivinganalysis.entity.Challenge;
 import com.sejong.drivinganalysis.entity.UserChallenge;
 import com.sejong.drivinganalysis.entity.enums.ChallengesStatus;
+import com.sejong.drivinganalysis.entity.enums.ChallengeType;
+import com.sejong.drivinganalysis.entity.enums.ChallengeCategory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -26,6 +30,14 @@ public class UserChallengeResponse {
     private boolean isCustomChallenge;
     private Long targetValue;
 
+    // for Challenge only
+    private String targetMetric;
+    private String comparator;
+    private LocalDate startDate;
+    private LocalDate endDate;
+    private String rewardInfo;
+    private ChallengeType challengeType;
+    private ChallengeCategory category;
 
     public static UserChallengeResponse fromEntity(UserChallenge uc, Long displayValue) {
         boolean isCustom = (uc.getChallenge() == null);
@@ -42,6 +54,22 @@ public class UserChallengeResponse {
                 .completedAt(uc.getCompletedAt())
                 .isCustomChallenge(isCustom)
                 .targetValue(uc.getTargetValue())
+                .build();
+    }
+
+    public static UserChallengeResponse fromChallengeOnly(Challenge ch) {
+        return UserChallengeResponse.builder()
+                .challengeId(ch.getChallengeId())
+                .title(ch.getTitle())
+                .targetMetric(ch.getTargetMetric())
+                .targetValue(ch.getTargetValue())
+                .comparator(ch.getComparator())
+                .startDate(ch.getStartDate())
+                .endDate(ch.getEndDate())
+                .rewardInfo(ch.getRewardInfo())
+                .challengeType(ch.getChallengeType())
+                .category(ch.getCategory())
+                .isCustomChallenge(false)
                 .build();
     }
 }

@@ -30,18 +30,28 @@ public class UserChallengeController {
     }
 
     /**
-     * 사용자별 챌린지 목록 조회 (displayValue 포함)
+     * [사용자] 내가 참여한 챌린지 목록 조회 (displayValue 포함)
      */
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<UserChallengeResponse>> getUserChallenges(
+    @GetMapping("/joined/{userId}")
+    public ResponseEntity<List<UserChallengeResponse>> getJoinedUserChallenges(
             @PathVariable Long userId) {
         List<UserChallengeResponse> list = userChallengeService.getUserChallengeResponsesWithDisplayValue(userId);
         return ResponseEntity.ok(list);
     }
 
     /**
-     * [관리자] 수동으로 개인화 챌린지 생성
-     * 테스터용
+     * [사용자] 현재 참여 가능한 챌린지 목록 조회
+     * 조건: startDate <= 오늘 && endDate >= 오늘 && 아직 참여하지 않은 챌린지
+     */
+    @GetMapping("/available/{userId}")
+    public ResponseEntity<List<UserChallengeResponse>> getAvailableUserChallenges(
+            @PathVariable Long userId) {
+        List<UserChallengeResponse> list = userChallengeService.getAvailableUserChallenges(userId);
+        return ResponseEntity.ok(list);
+    }
+
+    /**
+     * [관리자] 수동으로 개인화 챌린지 생성 (테스터용)
      */
     @PostMapping("/internal/create")
     public ResponseEntity<UserChallengeResponse> createCustomChallengeInternal(
@@ -52,8 +62,7 @@ public class UserChallengeController {
     }
 
     /**
-     * [사용자] 챌린지 진행도 수동 업데이트
-     * 테스터용
+     * [사용자] 챌린지 진행도 수동 업데이트 (테스터용)
      */
     @PatchMapping("/{ucId}/progress")
     public ResponseEntity<UserChallengeResponse> updateProgress(

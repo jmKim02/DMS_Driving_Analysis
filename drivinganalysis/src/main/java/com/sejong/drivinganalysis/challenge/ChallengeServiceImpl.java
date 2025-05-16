@@ -1,8 +1,7 @@
 package com.sejong.drivinganalysis.challenge;
+
 import com.sejong.drivinganalysis.challenge.dto.ChallengeCreateRequest;
-import com.sejong.drivinganalysis.challenge.ChallengeService;
 import com.sejong.drivinganalysis.entity.Challenge;
-import com.sejong.drivinganalysis.challenge.ChallengeRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -53,10 +52,8 @@ public class ChallengeServiceImpl implements ChallengeService {
     @Override
     @Transactional(readOnly = true)
     public List<Challenge> getActiveChallenges(LocalDate date) {
-        // startDate <= 오늘 날짜 <= endDate인 챌린지만 조회
         return challengeRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(date, date);
     }
-
 
     @Override
     @Transactional

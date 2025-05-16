@@ -44,4 +44,3 @@ public interface ChallengeService {
      */
     void deleteChallenge(Long challengeId);
 }
-
