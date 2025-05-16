@@ -165,9 +165,9 @@
             int durationMinutes = 20 + random.nextInt(41); // 20-60분 사이의 주행 시간
 
             // 위험 행동 빈도 (합리적인 범위 내에서 생성)
-            int drowsinessCount = 10+generateRiskBehaviorCount(5); // 0-4회
-            int phoneUsageCount = 10+generateRiskBehaviorCount(4); // 0-3회
-            int smokingCount = 10+generateRiskBehaviorCount(3);    // 0-2회
+            int drowsinessCount = generateRiskBehaviorCount(15); // 0-14회
+            int phoneUsageCount = generateRiskBehaviorCount(13); // 0-12회
+            int smokingCount = generateRiskBehaviorCount(12);    // 0-10회
 
             // 1. 영상 데이터 생성
             DrivingVideo video = createDrivingVideo(user, sessionTime, durationMinutes);

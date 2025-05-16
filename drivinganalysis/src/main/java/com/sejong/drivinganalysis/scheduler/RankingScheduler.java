@@ -15,7 +15,7 @@ public class RankingScheduler {
 
     private final RankingService rankingService;
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "*/20 * * * * *")
     public void updateMonthlyRankingAutomatically() {
         LocalDate today = LocalDate.now();
         int year = today.getYear();
