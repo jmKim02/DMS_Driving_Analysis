@@ -105,19 +105,16 @@ public class UserChallengeServiceImpl implements UserChallengeService {
     public List<UserChallengeResponse> getAvailableUserChallenges(Long userId) {
         LocalDate today = LocalDate.now();
 
-        // 오늘 기준 참여 가능한 챌린지 목록
         List<Challenge> candidates = challengeRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(today, today);
 
-        // 유저가 이미 참여한 챌린지 ID 목록
         Set<Long> joinedIds = userChallengeRepository.findByUser_UserId(userId).stream()
                 .map(uc -> uc.getChallenge() != null ? uc.getChallenge().getChallengeId() : null)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        // 참여 안 한 챌린지만 필터링
         return candidates.stream()
                 .filter(ch -> !joinedIds.contains(ch.getChallengeId()))
-                .map(ch -> UserChallengeResponse.fromChallengeOnly(ch))
+                .map(UserChallengeResponse::fromChallengeOnly)
                 .collect(Collectors.toList());
     }
 
@@ -277,7 +274,7 @@ public class UserChallengeServiceImpl implements UserChallengeService {
                     userChallengeRepository.save(uc);
                 }
             } else if (maxValue >= SUSPICIOUS_THRESHOLD) {
-                log.warn("\u26a0\ufe0f 사용자 {}의 {} 수치가 {}회 이상입니다. 의심 계정 가능성.",
+                log.warn("⚠️ 사용자 {}의 {} 수치가 {}회 이상입니다. 의심 계정 가능성.",
                         user.getUserId(), maxMetric, maxValue);
             }
         }
@@ -292,4 +289,14 @@ public class UserChallengeServiceImpl implements UserChallengeService {
                 uc.getUser().getUserId(), "weekly", null, null, null, null, null);
         return Optional.ofNullable(resp.getAverageScore()).map(Long::valueOf).orElse(0L);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserChallengeResponse getUserChallengeDetail(Long userChallengeId) {
+        UserChallenge uc = userChallengeRepository.findById(userChallengeId)
+                .orElseThrow(() -> new EntityNotFoundException("UserChallenge가 없습니다. ID=" + userChallengeId));
+        Long displayValue = calculateDisplayValue(uc);
+        return UserChallengeResponse.fromEntity(uc, displayValue);
+    }
+
 }
