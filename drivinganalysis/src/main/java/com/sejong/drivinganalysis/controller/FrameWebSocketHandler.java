@@ -35,7 +35,7 @@ public class FrameWebSocketHandler {
     private static final Map<String, Session> sessions = new ConcurrentHashMap<>();
 
     @Autowired
-    public void setVideoService(VideoService service) {
+    public void setVideoService(VideoService service)/**/ {
         FrameWebSocketHandler.videoService = service;
     }
 
@@ -55,6 +55,9 @@ public class FrameWebSocketHandler {
         // 바이너리 버퍼 크기 설정
         session.setMaxBinaryMessageBufferSize(30 * 1024 * 1024); // 30MB
         session.setMaxTextMessageBufferSize(64 * 1024); // 64KB
+
+        // 세션 타임아웃 설정 (15분)
+        session.setMaxIdleTimeout(15 * 60 * 1000);
     }
 
     /**
@@ -167,11 +170,7 @@ public class FrameWebSocketHandler {
      */
     @OnError
     public void onError(Session session, Throwable error) {
-        log.warn("WebSocket 오류: sessionId={}", session.getId(), error);
-
-        if (session.isOpen()) {
-            sendErrorMessage(session, "연결 오류: " + error.getMessage());
-        }
+        log.warn("WebSocket 오류: sessionId={}, 오류={}", session.getId(), error.getMessage());
 
         sessions.remove(session.getId());
         session.getUserProperties().clear();
@@ -192,7 +191,7 @@ public class FrameWebSocketHandler {
      * 오류 메시지 전송 유틸리티 메서드
      */
     private void sendErrorMessage(Session session, String errorMessage) {
-        if (!session.isOpen()) {
+        if (session == null || !session.isOpen()) {
             return;
         }
 

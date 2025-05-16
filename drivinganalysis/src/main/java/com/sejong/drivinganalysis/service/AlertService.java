@@ -25,8 +25,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class AlertService {
 
-    private static final long SSE_TIMEOUT = 60 * 60 * 1000L; // 1시간 타임아웃
-    private static final long IDLE_TIMEOUT = 30 * 60 * 1000L; // 30분 동안 활동이 없으면 연결 종료
+    private static final long SSE_TIMEOUT = 30 * 60 * 1000L; // 30분 타임아웃
+    private static final long IDLE_TIMEOUT = 15 * 60 * 1000L; // 15분 동안 활동이 없으면 연결 종료
     private static final long RECONNECT_DELAY = 1000L; // 클라이언트 재연결 지연 시간(ms)
 
     // 사용자 ID와 SSE 이미터 매핑
