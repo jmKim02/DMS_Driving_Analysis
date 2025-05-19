@@ -68,7 +68,7 @@
         private void createDemoUsers()
         {
             log.info("Creating demo users for testing");
-            for (int i = 1; i <= 20; i++) {
+            for (int i = 1; i <= 8; i++) {
                 createUser("driver" + i, "password" + i, "driver" + i + "@example.com");
             }
             log.info("Demo users created successfully");
@@ -97,9 +97,9 @@
         }*/
         private void createDemoData() {
             log.info("Creating demo driving data for testing");
-            for (int i = 1; i <= 20; i++) {
+            for (int i = 1; i <= 8; i++) {
                 User user = userRepository.findByUsername("driver" + i).orElseThrow();
-                if (i <= 3) {
+                if (i <= 1) {
                     for (int month = 3; month <= 5; month++) {
                         createMonthlyData(user, month);
                     }

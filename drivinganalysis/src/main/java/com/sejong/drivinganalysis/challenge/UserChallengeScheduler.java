@@ -21,7 +21,6 @@ public class UserChallengeScheduler {
      * 매주 월요일 00:00 개인화 챌린지 자동 생성
      */
     @Scheduled(cron = "0 0 0 * * MON")
-    //@Scheduled(cron = "0 * * * * *")
     public void weeklyCreatePersonalChallenges() {
         // 모든 유저를 조회해서, 각 유저마다 주간 개인화 챌린지를 만듭니다.
 

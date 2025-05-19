@@ -51,8 +51,6 @@ public class SecurityConfig {
                         .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/v1/alerts/subscribe/**").permitAll()
                         .requestMatchers("/rankings/**").permitAll()   // 랭킹 테스트용 추가
-                        .requestMatchers("/api/challenges/**").permitAll()       // 챌린지 API 허용
-                        .requestMatchers("/api/user-challenges/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
