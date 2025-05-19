@@ -252,11 +252,50 @@ public class AlertService {
         }
     }
 
+//    /**
+//     * 졸음 감지 알림 전송
+//     * AI 분석 결과 졸음이 감지된 경우 사용자에게 실시간 알림 전송
+//     */
+//    public void sendDrowsinessAlert(Long userId, boolean drowsinessDetected, Integer batchId) {
+//        if (userId == null) {
+//            log.warn("Attempted to send alert to null userId");
+//            return;
+//        }
+//
+//        SseEmitter emitter = userEmitters.get(userId);
+//
+//        if (emitter != null) {
+//            try {
+//                VideoDto.DrowsinessAlert alert = VideoDto.DrowsinessAlert.builder()
+//                        .userId(userId)
+//                        .timestamp(System.currentTimeMillis())
+//                        .drowsinessDetected(drowsinessDetected)
+//                        .message("졸음 상태가 감지되었습니다. 안전한 곳에 차량을 정차하고 휴식을 취하세요.")
+//                        .batchId(batchId)
+//                        .build();
+//
+//                emitter.send(SseEmitter.event()
+//                        .name("drowsiness")
+//                        .data(alert));
+//
+//                // 알림 전송 성공 시 마지막 활동 시간 업데이트
+//                lastActivityTimes.put(userId, Instant.now());
+//
+//                log.info("Drowsiness alert sent to userId: {}, batchId: {}", userId, batchId);
+//            } catch (IOException e) {
+//                log.warn("Error sending drowsiness alert to userId: {}, batchId: {}: {}", userId, batchId, e.getMessage());
+//                cleanupUser(userId);
+//            }
+//        } else {
+//            log.warn("No active SSE connection for userId: {}", userId);
+//        }
+//    }
+
     /**
-     * 졸음 감지 알림 전송
-     * AI 분석 결과 졸음이 감지된 경우 사용자에게 실시간 알림 전송
+     * 위험 행동 감지 알림 전송
+     * 통합된 알림 전송 메서드로 다양한 위험 행동 알림을 처리
      */
-    public void sendDrowsinessAlert(Long userId, boolean drowsinessDetected, Integer batchId) {
+    public void sendRiskBehaviorAlert(Long userId, String alertType, boolean detected, Integer batchId) {
         if (userId == null) {
             log.warn("Attempted to send alert to null userId");
             return;
@@ -266,24 +305,47 @@ public class AlertService {
 
         if (emitter != null) {
             try {
-                VideoDto.DrowsinessAlert alert = VideoDto.DrowsinessAlert.builder()
+                String alertMessage;
+
+                // 알림 메시지 설정
+                switch (alertType) {
+                    case "drowsiness":
+                        alertMessage = "졸음 상태가 감지되었습니다. 안전한 곳에 차량을 정차하고 휴식을 취하세요.";
+                        break;
+                    case "phone_usage":
+                        alertMessage = "운전 중 휴대폰 사용이 감지되었습니다. 운전에 집중해주세요.";
+                        break;
+                    case "smoking":
+                        alertMessage = "운전 중 흡연이 감지되었습니다. 안전 운전에 집중해주세요.";
+                        break;
+                    default:
+                        alertMessage = "위험 행동이 감지되었습니다. 안전 운전에 집중해주세요.";
+                }
+
+                // 새로운 Boolean 필드 기반 알림 객체 생성
+                VideoDto.RiskBehaviorAlert alert = VideoDto.RiskBehaviorAlert.builder()
                         .userId(userId)
                         .timestamp(System.currentTimeMillis())
-                        .drowsinessDetected(drowsinessDetected)
-                        .message("졸음 상태가 감지되었습니다. 안전한 곳에 차량을 정차하고 휴식을 취하세요.")
+                        .drowsinessDetected("drowsiness".equals(alertType) && detected)
+                        .phoneUsageDetected("phone_usage".equals(alertType) && detected)
+                        .smokingDetected("smoking".equals(alertType) && detected)
+                        .message(alertMessage)
                         .batchId(batchId)
                         .build();
 
+                // SSE 이벤트 전송 - 이벤트 이름은 alertType 사용
                 emitter.send(SseEmitter.event()
-                        .name("drowsiness")
+                        .name(alertType)
                         .data(alert));
 
                 // 알림 전송 성공 시 마지막 활동 시간 업데이트
                 lastActivityTimes.put(userId, Instant.now());
 
-                log.info("Drowsiness alert sent to userId: {}, batchId: {}", userId, batchId);
+                log.info("{} alert sent to userId: {}, batchId: {}",
+                        alertType.substring(0, 1).toUpperCase() + alertType.substring(1), userId, batchId);
             } catch (IOException e) {
-                log.warn("Error sending drowsiness alert to userId: {}, batchId: {}: {}", userId, batchId, e.getMessage());
+                log.warn("Error sending {} alert to userId: {}, batchId: {}: {}",
+                        alertType, userId, batchId, e.getMessage());
                 cleanupUser(userId);
             }
         } else {

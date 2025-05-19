@@ -121,10 +121,28 @@ public class VideoService {
                             return;
                         }
 
-                        // 졸음 감지 시에만 알림 전송
+                        // 졸음 감지 시 알림 전송
                         if (response.getDrowsinessDetected()) {
-                            log.info("Drowsiness detected for userId: {}, batchId: {}", user.getUserId(), frameBatch.getBatchId());
-                            alertService.sendDrowsinessAlert(user.getUserId(), true, frameBatch.getBatchId());
+                            log.info("Drowsiness detected for userId: {}, batchId: {}",
+                                    user.getUserId(), frameBatch.getBatchId());
+                            alertService.sendRiskBehaviorAlert(
+                                    user.getUserId(), "drowsiness", true, frameBatch.getBatchId());
+                        }
+
+                        // 휴대폰 사용 감지 시 알림 전송
+                        if (response.getPhoneUsageDetected()) {
+                            log.info("Phone usage detected for userId: {}, batchId: {}",
+                                    user.getUserId(), frameBatch.getBatchId());
+                            alertService.sendRiskBehaviorAlert(
+                                    user.getUserId(), "phone_usage", true, frameBatch.getBatchId());
+                        }
+
+                        // 흡연 감지 시 알림 전송
+                        if (response.getSmokingDetected()) {
+                            log.info("Smoking detected for userId: {}, batchId: {}",
+                                    user.getUserId(), frameBatch.getBatchId());
+                            alertService.sendRiskBehaviorAlert(
+                                    user.getUserId(), "smoking", true, frameBatch.getBatchId());
                         }
                     } catch (Exception e) {
                         log.error("Error in async frame analysis for userId: {}", user.getUserId(), e);

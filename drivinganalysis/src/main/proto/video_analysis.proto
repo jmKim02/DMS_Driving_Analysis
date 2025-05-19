@@ -39,8 +39,10 @@ message DrivingSessionEnd {
 message RealtimeAnalysisResponse {
   int64 user_id = 1;
   bool drowsiness_detected = 2;
-  bool analysis_completed = 3;
-  string error_message = 4;
+  bool phone_usage_detected = 3; // 추가
+  bool smoking_detected = 4;     // 추가
+  bool analysis_completed = 5;
+  string error_message = 6;
 }
 
 // 최종 분석 응답 (세션 종료 시)

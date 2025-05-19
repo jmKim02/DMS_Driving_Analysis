@@ -129,8 +129,8 @@ public class GrpcClientService {
                     RealtimeAnalysisResponse response = blockingStub.withDeadlineAfter(timeout, TimeUnit.SECONDS)
                             .analyzeFrames(request);
 
-                    log.info("Received gRPC response from AI server for userId: {}, drowsiness detected: {}",
-                            userId, response.getDrowsinessDetected());
+                    log.info("Received gRPC response for userId: {}, drowsiness detected: {}, phone detected: {}, smoking: {}",
+                            userId, response.getDrowsinessDetected(), response.getPhoneUsageDetected(), response.getSmokingDetected());
                     return response;
                 } catch (StatusRuntimeException e) {
                     retries++;
@@ -235,6 +235,8 @@ public class GrpcClientService {
         return RealtimeAnalysisResponse.newBuilder()
                 .setUserId(userId != null ? userId : 0L)
                 .setDrowsinessDetected(false)
+                .setPhoneUsageDetected(false)
+                .setSmokingDetected(false)
                 .setAnalysisCompleted(false)
                 .setErrorMessage("gRPC call failed: " + errorMessage)
                 .build();

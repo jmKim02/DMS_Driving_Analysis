@@ -86,19 +86,49 @@ public class VideoDto {
         private Boolean saved;
     }
 
+//    /**
+//     * 졸음 감지 알림 DTO
+//     * 백엔드 서버에서 SSE를 통해 클라이언트에 전송하는 졸음 알림 정보
+//     */
+//    @Data
+//    @Builder
+//    @NoArgsConstructor
+//    @AllArgsConstructor
+//    public static class DrowsinessAlert {
+//        private Long userId;
+//        private Long timestamp;
+//        private Boolean drowsinessDetected;
+//        private String message;
+//        private Integer batchId;
+//    }
+
     /**
-     * 졸음 감지 알림 DTO
-     * 백엔드 서버에서 SSE를 통해 클라이언트에 전송하는 졸음 알림 정보
+     * 위험 행동 감지 알림 DTO
+     * 백엔드 서버에서 SSE를 통해 클라이언트에 전송하는 위험 행동 알림 정보
      */
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class DrowsinessAlert {
+    public static class RiskBehaviorAlert {
         private Long userId;
         private Long timestamp;
         private Boolean drowsinessDetected;
+        private Boolean phoneUsageDetected;
+        private Boolean smokingDetected;
         private String message;
         private Integer batchId;
+
+        // 어떤 알림 타입인지 쉽게 확인할 수 있는 유틸리티 메서드
+        public String getPrimaryAlertType() {
+            if (Boolean.TRUE.equals(drowsinessDetected)) {
+                return "drowsiness";
+            } else if (Boolean.TRUE.equals(phoneUsageDetected)) {
+                return "phone_usage";
+            } else if (Boolean.TRUE.equals(smokingDetected)) {
+                return "smoking";
+            }
+            return null;
+        }
     }
 }
