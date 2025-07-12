@@ -39,7 +39,7 @@ Flutter 기반의 모바일 앱, Spring Boot 백엔드 서버, YOLO 기반 AI �
 ## 🛠️ 백엔드 개발 담당
 백엔드 기술 스택 상세
 - 언어: Java 17
-- 프레임워크: Spring (SpringBoot)
+- 프레임워크: Spring Boot 3.4.3 (Spring)
 - 빌드 도구: Gradle
 - IDE: IntelliJ IDEA
 - 데이터베이스: MySQL 8.0 (AWS RDS)
@@ -50,6 +50,7 @@ Flutter 기반의 모바일 앱, Spring Boot 백엔드 서버, YOLO 기반 AI �
 - Spring Security: 사용자 인증 및 권한 관리
 - Spring Validation: 요청 데이터 유효성 검사
 - Spring Data JPA: ORM 기반의 데이터 액세스 계층 구성
+- 테스트 도구: Postman (API 검증), JUnit 5, H2 (단위 테스트)
 
 
 통신 및 실시간 처리
@@ -62,6 +63,14 @@ Flutter 기반의 모바일 앱, Spring Boot 백엔드 서버, YOLO 기반 AI �
 - AWS EC2 (Ubuntu): 백엔드 서버 운영 및 배포
 - AWS RDS (MySQL): 데이터베이스 운영 및 관리
 - GitHub & Git: 버전 관리 및 협업
+
+
+### 📂 프로젝트 구조 (백엔드)
+> gRPC 통신을 위해 백엔드 서버와 AI 서버는 동일한 .proto 파일을 기반으로 메시지와 서비스 인터페이스를 정의해야 합니다.<br/>
+이는 syntax = "proto3"를 사용하여 정의한 메시지 구조 및 서비스 계약을 양쪽에서 동일하게 컴파일하여<br/>
+통신의 일관성과 직렬화/역직렬화 호환성을 유지하기 위함입니다.
+
+<img width="269" height="451" alt="image" src="https://github.com/user-attachments/assets/a262d273-42a6-4d27-b70d-8455f7a53abe" />
 
 ---
 <br/>
@@ -81,7 +90,7 @@ Flutter 기반의 모바일 앱, Spring Boot 백엔드 서버, YOLO 기반 AI �
 ---
 <br/>
 
-## 💻 담당 기능 상세
+## 담당 기능 상세
 
 ### ✅ 실시간 영상 프레임 수신 및 gRPC 분석 요청
 - WebSocket을 통해 배치 단위로 서버에 전달
@@ -103,22 +112,37 @@ Flutter 기반의 모바일 앱, Spring Boot 백엔드 서버, YOLO 기반 AI �
 ---
 <br/>
 
-## 🧪 시스템 테스트 및 성능
-- 평균 실시간 알림 지연 시간: **1초 이내**
-- WebSocket → gRPC → SSE 파이프라인 병목 제거
-- 프레임 전송/처리 실패 시 재시도 및 오류 로그 수집
+## ⚙️ 기술적 도전 & 해결
 
-<br/>
+### 실시간 영상 분석 파이프라인의 병목
+- **문제**: WebSocket → gRPC → SSE 구조에서 분석 지연 발생
+- **해결**: 프레임 전송을 **배치 단위**로 구성하여 전송량 감소  
+  gRPC 재시도 및 타임아웃 설정을 통해 통신 실패에 대응
 
-## 📂 프로젝트 구조 (백엔드)
-- gRPC를 사용할 때 별도로 백엔드서버와 AI서버가 동일한 protobuf 메시지 구조를 작성해야한다.
-
-<img width="269" height="451" alt="image" src="https://github.com/user-attachments/assets/a262d273-42a6-4d27-b70d-8455f7a53abe" />
+### SSE 연결 안정성
+- **문제**: 클라이언트와의 SSE 연결 끊김 및 유휴 세션 문제
+- **해결**: `SseEmitter` 기반 **유휴 연결 타임아웃 및 주기적 Ping 전송** 구현  
+  `Map<Long, SseEmitter>`로 사용자별 연결 관리 및 재연결 지원
 
 ---
 <br/>
 
-## 📎 AI 데이터 참고
+## 시스템 테스트 및 성능
+- 평균 실시간 알림 지연 시간: **1초 내외**
+- WebSocket → gRPC → SSE 파이프라인 병목 제거
+- 프레임 전송/처리 실패 시 재시도 및 오류 로그 수집
+
+---
+<br/>
+
+## 앱 UI 데모 시연 
+
+https://github.com/user-attachments/assets/93cb4081-ca04-49c8-b16d-cda79b82c220
+
+---
+<br/>
+
+## AI 데이터 참고
 - YOLOv8 학습 데이터 출처:  
   [AI Hub - 졸음운전 예방을 위한 운전자 상태 정보 영상 데이터셋](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&searchKeyword=%EC%A1%B8%EC%9D%8C%EC%9A%B4%EC%A0%84%20%EC%98%88%EB%B0%A9%EC%9D%84%20%EC%9C%84%ED%95%9C%20%EC%9A%B4%EC%A0%84%EC%9E%90%20%EC%83%81%ED%83%9C%20%EC%A0%95%EB%B3%B4%20%EC%98%81%EC%83%81&aihubDataSe=data&dataSetSn=173)
 - 졸음 감지 모델 성능 지표: mAP, Recall, Precision 기반
