@@ -1,4 +1,4 @@
-package com.sejong.drivinganalysis.ranking.dto;
+package com.sejong.drivinganalysis.dto;
 
 import lombok.*;
 

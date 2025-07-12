@@ -1,4 +1,4 @@
-package com.sejong.drivinganalysis.challenge;
+package com.sejong.drivinganalysis.repository;
 
 import com.sejong.drivinganalysis.entity.UserChallenge;
 import com.sejong.drivinganalysis.entity.enums.ChallengesStatus;

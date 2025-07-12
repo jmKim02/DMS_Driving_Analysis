@@ -1,6 +1,6 @@
 package com.sejong.drivinganalysis.service;
 
-import com.sejong.drivinganalysis.challenge.evaluator.ChallengeProgressUpdater;
+import com.sejong.drivinganalysis.configuration.ChallengeProgressUpdater;
 import com.sejong.drivinganalysis.dto.VideoDto;
 import com.sejong.drivinganalysis.dto.VideoDto.DrivingSessionEndResponse;
 import com.sejong.drivinganalysis.dto.VideoDto.FrameBatchRequest;

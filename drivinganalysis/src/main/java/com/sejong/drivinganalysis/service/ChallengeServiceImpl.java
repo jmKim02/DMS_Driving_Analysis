@@ -1,7 +1,8 @@
-package com.sejong.drivinganalysis.challenge;
+package com.sejong.drivinganalysis.service;
 
-import com.sejong.drivinganalysis.challenge.dto.ChallengeCreateRequest;
+import com.sejong.drivinganalysis.dto.challengedto.ChallengeCreateRequest;
 import com.sejong.drivinganalysis.entity.Challenge;
+import com.sejong.drivinganalysis.repository.ChallengeRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;

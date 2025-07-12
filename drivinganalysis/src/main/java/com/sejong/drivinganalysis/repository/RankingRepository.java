@@ -1,4 +1,4 @@
-package com.sejong.drivinganalysis.ranking.repository;
+package com.sejong.drivinganalysis.repository;
 
 import com.sejong.drivinganalysis.entity.Ranking;
 import com.sejong.drivinganalysis.entity.enums.RankingType;

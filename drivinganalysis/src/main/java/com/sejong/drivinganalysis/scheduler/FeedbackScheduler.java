@@ -38,6 +38,7 @@ public class FeedbackScheduler {
      * 지난 주 운전 데이터가 있는 사용자를 대상으로 피드백 생성
      */
     @Scheduled(cron = "0 0 8 * * MON") // 매주 월요일 오전 8시
+//    @Scheduled(cron = "5 * * * * *") // 매주 월요일 오전 8시
     public void generateWeeklyFeedbacks() {
         log.info("Starting weekly feedback generation job");
 

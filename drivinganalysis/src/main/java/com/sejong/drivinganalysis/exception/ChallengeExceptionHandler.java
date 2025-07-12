@@ -1,10 +1,10 @@
 // src/main/java/com/sejong/drivinganalysis/challenge/exception/ChallengeExceptionHandler.java
-package com.sejong.drivinganalysis.challenge.exception;
+package com.sejong.drivinganalysis.exception;
 
 import com.sejong.drivinganalysis.dto.common.ApiResponse;
-import com.sejong.drivinganalysis.challenge.exception.ChallengeExceptions.ChallengeNotFoundException;
-import com.sejong.drivinganalysis.challenge.exception.ChallengeExceptions.DuplicateChallengeException;      // ← 추가
-import com.sejong.drivinganalysis.challenge.exception.ChallengeExceptions.DuplicateParticipationException;
+import com.sejong.drivinganalysis.exception.ChallengeExceptions.ChallengeNotFoundException;
+import com.sejong.drivinganalysis.exception.ChallengeExceptions.DuplicateChallengeException;      // ← 추가
+import com.sejong.drivinganalysis.exception.ChallengeExceptions.DuplicateParticipationException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;

@@ -1,13 +1,12 @@
-package com.sejong.drivinganalysis.challenge;
+package com.sejong.drivinganalysis.scheduler;
 
+import com.sejong.drivinganalysis.service.UserChallengeService;
 import com.sejong.drivinganalysis.entity.User;
 import com.sejong.drivinganalysis.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDate;
 
 @Component
 @Slf4j
@@ -21,6 +20,7 @@ public class UserChallengeScheduler {
      * 매주 월요일 00:00 개인화 챌린지 자동 생성
      */
     @Scheduled(cron = "0 0 0 * * MON")
+//    @Scheduled(cron = "3 * * * * *")
     public void weeklyCreatePersonalChallenges() {
         // 모든 유저를 조회해서, 각 유저마다 주간 개인화 챌린지를 만듭니다.
 
@@ -37,6 +37,7 @@ public class UserChallengeScheduler {
      * 매일 01:00 만료된 챌린지 평가 및 보상 처리
      */
     @Scheduled(cron = "0 0 1 * * *")
+//    @Scheduled(cron = "3 * * * * *")
     public void dailyEvaluateChallenges() {
         log.info("[스케줄러] 만료된 챌린지 평가 및 보상 처리 시작");
 

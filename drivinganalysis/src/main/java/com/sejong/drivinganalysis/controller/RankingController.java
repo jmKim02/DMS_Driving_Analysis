@@ -1,8 +1,8 @@
-package com.sejong.drivinganalysis.ranking.controller;
+package com.sejong.drivinganalysis.controller;
 
-import com.sejong.drivinganalysis.ranking.dto.RankingListResponseDto;
+import com.sejong.drivinganalysis.dto.RankingListResponseDto;
 import com.sejong.drivinganalysis.dto.common.ApiResponse;
-import com.sejong.drivinganalysis.ranking.service.RankingService;
+import com.sejong.drivinganalysis.service.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

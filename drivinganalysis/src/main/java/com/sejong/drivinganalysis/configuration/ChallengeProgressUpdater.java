@@ -1,7 +1,7 @@
-package com.sejong.drivinganalysis.challenge.evaluator;
+package com.sejong.drivinganalysis.configuration;
 
 import com.sejong.drivinganalysis.entity.AnalysisResult;
-import com.sejong.drivinganalysis.challenge.UserChallengeService;
+import com.sejong.drivinganalysis.service.UserChallengeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

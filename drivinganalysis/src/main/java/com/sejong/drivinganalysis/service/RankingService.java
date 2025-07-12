@@ -1,12 +1,12 @@
-package com.sejong.drivinganalysis.ranking.service;
+package com.sejong.drivinganalysis.service;
 
 import com.sejong.drivinganalysis.entity.Ranking;
 import com.sejong.drivinganalysis.entity.User;
 import com.sejong.drivinganalysis.entity.UserScore;
 import com.sejong.drivinganalysis.entity.enums.RankingType;
-import com.sejong.drivinganalysis.ranking.dto.RankingListResponseDto;
-import com.sejong.drivinganalysis.ranking.dto.RankingSummaryDto;
-import com.sejong.drivinganalysis.ranking.repository.RankingRepository;
+import com.sejong.drivinganalysis.dto.RankingListResponseDto;
+import com.sejong.drivinganalysis.dto.RankingSummaryDto;
+import com.sejong.drivinganalysis.repository.RankingRepository;
 import com.sejong.drivinganalysis.repository.UserScoreRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;

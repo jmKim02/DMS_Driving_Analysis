@@ -1,7 +1,8 @@
-package com.sejong.drivinganalysis.challenge;
+package com.sejong.drivinganalysis.controller;
 
-import com.sejong.drivinganalysis.challenge.dto.ChallengeCreateRequest;
-import com.sejong.drivinganalysis.challenge.dto.ChallengeResponse;
+import com.sejong.drivinganalysis.service.ChallengeService;
+import com.sejong.drivinganalysis.dto.challengedto.ChallengeCreateRequest;
+import com.sejong.drivinganalysis.dto.challengedto.ChallengeResponse;
 import com.sejong.drivinganalysis.entity.Challenge;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

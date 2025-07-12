@@ -1,8 +1,7 @@
     package com.sejong.drivinganalysis.configuration;
 
-    import com.sejong.drivinganalysis.challenge.UserChallengeService;
+    import com.sejong.drivinganalysis.service.UserChallengeService;
     import com.sejong.drivinganalysis.entity.*;
-    import com.sejong.drivinganalysis.entity.enums.AnalysisStatus;
     import com.sejong.drivinganalysis.entity.enums.VideoStatus;
     import com.sejong.drivinganalysis.repository.AnalysisResultRepository;
     import com.sejong.drivinganalysis.repository.DrivingVideoRepository;
@@ -25,7 +24,6 @@
     import java.time.temporal.TemporalAdjusters;
     import java.util.ArrayList;
     import java.util.List;
-    import java.util.Map;
     import java.util.Random;
 
     /**
@@ -100,11 +98,12 @@
             for (int i = 1; i <= 8; i++) {
                 User user = userRepository.findByUsername("driver" + i).orElseThrow();
                 if (i <= 1) {
-                    for (int month = 3; month <= 5; month++) {
+                    for (int month = 2; month <= 6; month++) {
                         createMonthlyData(user, month);
                     }
                 } else {
                     createMonthlyData(user, 5);
+                    createMonthlyData(user, 6);
                 }
             }
             log.info("Demo driving data created successfully");

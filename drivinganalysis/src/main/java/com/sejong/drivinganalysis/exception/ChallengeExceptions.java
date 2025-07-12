@@ -1,4 +1,4 @@
-package com.sejong.drivinganalysis.challenge.exception;
+package com.sejong.drivinganalysis.exception;
 
 import com.sejong.drivinganalysis.dto.common.ApiResponse;
 import org.hibernate.exception.ConstraintViolationException;

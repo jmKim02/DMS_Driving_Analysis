@@ -1,6 +1,6 @@
-package com.sejong.drivinganalysis.challenge;
+package com.sejong.drivinganalysis.service;
 
-import com.sejong.drivinganalysis.challenge.dto.ChallengeCreateRequest;
+import com.sejong.drivinganalysis.dto.challengedto.ChallengeCreateRequest;
 import com.sejong.drivinganalysis.entity.Challenge;
 
 import java.time.LocalDate;

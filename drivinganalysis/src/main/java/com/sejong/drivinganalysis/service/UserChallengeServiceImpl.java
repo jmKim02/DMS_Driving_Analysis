@@ -1,15 +1,16 @@
-package com.sejong.drivinganalysis.challenge;
+package com.sejong.drivinganalysis.service;
 
-import com.sejong.drivinganalysis.challenge.dto.UserChallengeCreateRequest;
-import com.sejong.drivinganalysis.challenge.dto.UserChallengeJoinRequest;
-import com.sejong.drivinganalysis.challenge.dto.UserChallengeResponse;
+import com.sejong.drivinganalysis.dto.challengedto.UserChallengeCreateRequest;
+import com.sejong.drivinganalysis.dto.challengedto.UserChallengeJoinRequest;
+import com.sejong.drivinganalysis.dto.challengedto.UserChallengeResponse;
 import com.sejong.drivinganalysis.dto.ScoreDto.ScoreResponse;
 import com.sejong.drivinganalysis.entity.Challenge;
 import com.sejong.drivinganalysis.entity.User;
 import com.sejong.drivinganalysis.entity.UserChallenge;
 import com.sejong.drivinganalysis.entity.enums.ChallengesStatus;
+import com.sejong.drivinganalysis.repository.ChallengeRepository;
+import com.sejong.drivinganalysis.repository.UserChallengeRepository;
 import com.sejong.drivinganalysis.repository.UserRepository;
-import com.sejong.drivinganalysis.service.UserScoreService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

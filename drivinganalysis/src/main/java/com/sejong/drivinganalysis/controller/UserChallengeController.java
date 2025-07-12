@@ -1,8 +1,10 @@
-package com.sejong.drivinganalysis.challenge;
+package com.sejong.drivinganalysis.controller;
 
-import com.sejong.drivinganalysis.challenge.dto.UserChallengeCreateRequest;
-import com.sejong.drivinganalysis.challenge.dto.UserChallengeJoinRequest;
-import com.sejong.drivinganalysis.challenge.dto.UserChallengeResponse;
+import com.sejong.drivinganalysis.repository.UserChallengeRepository;
+import com.sejong.drivinganalysis.service.UserChallengeService;
+import com.sejong.drivinganalysis.dto.challengedto.UserChallengeCreateRequest;
+import com.sejong.drivinganalysis.dto.challengedto.UserChallengeJoinRequest;
+import com.sejong.drivinganalysis.dto.challengedto.UserChallengeResponse;
 import com.sejong.drivinganalysis.entity.UserChallenge;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;

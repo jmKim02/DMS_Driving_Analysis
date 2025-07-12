@@ -1,4 +1,4 @@
-package com.sejong.drivinganalysis.challenge.dto;
+package com.sejong.drivinganalysis.dto.challengedto;
 
 import com.sejong.drivinganalysis.entity.enums.ChallengeCategory;
 import com.sejong.drivinganalysis.entity.enums.ChallengeType;

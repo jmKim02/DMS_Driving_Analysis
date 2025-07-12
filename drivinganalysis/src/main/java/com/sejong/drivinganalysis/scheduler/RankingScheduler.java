@@ -1,6 +1,6 @@
 package com.sejong.drivinganalysis.scheduler;
 
-import com.sejong.drivinganalysis.ranking.service.RankingService;
+import com.sejong.drivinganalysis.service.RankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,6 +16,7 @@ public class RankingScheduler {
     private final RankingService rankingService;
 
     @Scheduled(cron = "0 0 0 * * *")
+//    @Scheduled(cron = "5 * * * * *")
     public void updateMonthlyRankingAutomatically() {
         LocalDate today = LocalDate.now();
         int year = today.getYear();

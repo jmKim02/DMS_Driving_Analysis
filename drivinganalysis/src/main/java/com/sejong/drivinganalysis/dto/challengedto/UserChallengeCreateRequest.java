@@ -1,4 +1,4 @@
-package com.sejong.drivinganalysis.challenge.dto;
+package com.sejong.drivinganalysis.dto.challengedto;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;

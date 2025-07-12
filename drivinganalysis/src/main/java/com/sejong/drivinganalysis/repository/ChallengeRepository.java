@@ -1,4 +1,4 @@
-package com.sejong.drivinganalysis.challenge;
+package com.sejong.drivinganalysis.repository;
 
 import com.sejong.drivinganalysis.entity.Challenge;
 import org.springframework.data.jpa.repository.JpaRepository;
